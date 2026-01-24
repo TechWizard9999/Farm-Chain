@@ -1,62 +1,39 @@
-const { createMachine } = require("xstate");
-
-const orderMachine = createMachine({
-    id: "order",
-    initial: "pending",
-    states: {
-        pending: {
-            on: { 
-                CONFIRM: "confirmed", 
-                CANCEL: "cancelled" 
-            }
-        },
-        confirmed: {
-            on: { 
-                SHIP: "shipped",
-                CANCEL: "cancelled"
-            }
-        },
-        shipped: {
-            on: { 
-                DELIVER: "delivered" 
-            }
-        },
-        delivered: {
-            on: { 
-                COMPLETE: "completed" 
-            }
-        },
-        completed: { type: "final" },
-        cancelled: { type: "final" }
-    }
-});
+// Simple state transitions map (avoiding XState v5 complexity for state lookup)
+const orderTransitions = {
+  pending: { CONFIRM: "confirmed", CANCEL: "cancelled" },
+  confirmed: { SHIP: "shipped", CANCEL: "cancelled" },
+  shipped: { DELIVER: "delivered" },
+  delivered: { COMPLETE: "completed" },
+  completed: {}, // final state
+  cancelled: {}, // final state
+};
 
 function canTransition(currentState, event) {
-    const stateNode = orderMachine.states[currentState];
-    if (!stateNode || !stateNode.on) return false;
-    return event in stateNode.on;
+  const transitions = orderTransitions[currentState];
+  if (!transitions) return false;
+  return event in transitions;
 }
 
 function getNextState(currentState, event) {
-    const stateNode = orderMachine.states[currentState];
-    if (!stateNode || !stateNode.on) return currentState;
-    return stateNode.on[event] || currentState;
+  const transitions = orderTransitions[currentState];
+  if (!transitions) return currentState;
+  return transitions[event] || currentState;
 }
 
 function getAllowedEvents(currentState) {
-    const stateNode = orderMachine.states[currentState];
-    if (!stateNode || !stateNode.on) return [];
-    return Object.keys(stateNode.on);
+  const transitions = orderTransitions[currentState];
+  if (!transitions) return [];
+  return Object.keys(transitions);
 }
 
 function isFinalState(state) {
-    return state === 'completed' || state === 'cancelled';
+  return state === "completed" || state === "cancelled";
 }
 
-module.exports = { 
-    orderMachine, 
-    canTransition, 
-    getNextState, 
-    getAllowedEvents,
-    isFinalState
+module.exports = {
+  orderTransitions,
+  canTransition,
+  getNextState,
+  getAllowedEvents,
+  isFinalState,
 };

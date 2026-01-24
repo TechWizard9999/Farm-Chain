@@ -1,48 +1,26 @@
-const { createMachine } = require("xstate");
-
-const auctionMachine = createMachine({
-    id: "auction",
-    initial: "open",
-    states: {
-        open: {
-            on: { 
-                CLOSE: "closed", 
-                CANCEL: "cancelled",
-                EXPIRE: "expired"
-            }
-        },
-        closed: {
-            on: { 
-                AWARD: "awarded",
-                REOPEN: "open"
-            }
-        },
-        awarded: {
-            type: "final"
-        },
-        expired: {
-            type: "final"
-        },
-        cancelled: {
-            type: "final"
-        }
-    }
-});
+// Simple state transitions map (avoiding XState v5 complexity for state lookup)
+const auctionTransitions = {
+  open: { CLOSE: "closed", CANCEL: "cancelled", EXPIRE: "expired" },
+  closed: { AWARD: "awarded", REOPEN: "open" },
+  awarded: {}, // final state
+  expired: {}, // final state
+  cancelled: {}, // final state
+};
 
 function canTransition(currentState, event) {
-    const stateNode = auctionMachine.states[currentState];
-    if (!stateNode || !stateNode.on) return false;
-    return event in stateNode.on;
+  const transitions = auctionTransitions[currentState];
+  if (!transitions) return false;
+  return event in transitions;
 }
 
 function getNextState(currentState, event) {
-    const stateNode = auctionMachine.states[currentState];
-    if (!stateNode || !stateNode.on) return currentState;
-    return stateNode.on[event] || currentState;
+  const transitions = auctionTransitions[currentState];
+  if (!transitions) return currentState;
+  return transitions[event] || currentState;
 }
 
-module.exports = { 
-    auctionMachine, 
-    canTransition, 
-    getNextState 
+module.exports = {
+  auctionTransitions,
+  canTransition,
+  getNextState,
 };
