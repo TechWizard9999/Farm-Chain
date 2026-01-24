@@ -20,6 +20,10 @@ class UserService {
         return User.findById(id);
     }
 
+    async findByGoogleId(googleId) {
+        return User.findOne({ googleId });
+    }
+
     async create(userData) {
         const newUser = new User(userData);
         return newUser.save();

@@ -7,15 +7,23 @@ const userResolvers = {
             if (!context.user) throw new Error("Unauthorized");
             return userService.findByIdentifier(identifier);
         },
+        me: async (_, __, context) => {
+            if (!context.user) throw new Error("Unauthorized");
+            return context.user;
+        },
     },
 
     Mutation: {
-        signup: async (_, { name, email, phone, password }) => {
-            return authController.signup(name, email, phone, password);
+        signup: async (_, { name, email, phone, password, role }) => {
+            return authController.signup(name, email, phone, password, role);
         },
 
         login: async (_, { identifier, password }) => {
             return authController.login(identifier, password);
+        },
+
+        googleAuth: async (_, { googleToken, role }) => {
+            return authController.googleAuth(googleToken, role);
         },
 
         sendOTP: async (_, { identifier }) => {

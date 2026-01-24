@@ -4,6 +4,7 @@ const typeDefs = `#graphql
     name: String!
     email: String
     phone: String
+    role: String!
   }
 
   type AuthResponse {
@@ -19,11 +20,13 @@ const typeDefs = `#graphql
 
   type Query {
     user(identifier: String!): User
+    me: User
   }
 
   type Mutation {
-    signup(name: String!, email: String, phone: String, password: String!): AuthResponse!
+    signup(name: String!, email: String, phone: String, password: String!, role: String): AuthResponse!
     login(identifier: String!, password: String!): AuthResponse!
+    googleAuth(googleToken: String!, role: String): AuthResponse!
     sendOTP(identifier: String!): OTPResponse!
     verifyOTP(identifier: String!, otp: String!): OTPResponse!
     resetPassword(identifier: String!, otp: String!, newPassword: String!): OTPResponse!

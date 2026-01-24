@@ -1,9 +1,10 @@
 const authService = require("../services/authService");
 const userService = require("../services/userService");
 const otpService = require("../services/otpService");
+const googleAuthService = require("../services/googleAuthService");
 
 class AuthController {
-    async signup(name, email, phone, password) {
+    async signup(name, email, phone, password, role = 'user') {
         if (!email && !phone) {
             throw new Error("Email or phone is required");
         }
@@ -15,7 +16,13 @@ class AuthController {
         }
 
         const hashedPassword = await authService.hashPassword(password);
-        const user = await userService.create({ name, email, phone, password: hashedPassword });
+        const user = await userService.create({ 
+            name, 
+            email, 
+            phone, 
+            password: hashedPassword,
+            role 
+        });
         const token = authService.generateToken(user._id);
 
         return { token, user };
@@ -36,6 +43,41 @@ class AuthController {
         return { token, user };
     }
 
+    async googleAuth(googleToken, role = 'user') {
+        // Verify Google token
+        const googleUser = await googleAuthService.verifyToken(googleToken);
+        
+        // Check if user exists by Google ID
+        let user = await userService.findByGoogleId(googleUser.googleId);
+        
+        if (!user) {
+            // Check if email already exists
+            if (googleUser.email) {
+                const existingUser = await userService.findByEmail(googleUser.email);
+                if (existingUser) {
+                    // Link Google account to existing user
+                    user = await userService.updateProfile(existingUser._id, {
+                        googleId: googleUser.googleId
+                    });
+                }
+            }
+        }
+        
+        if (!user) {
+            // Create new user with Google info
+            user = await userService.create({
+                name: googleUser.name,
+                email: googleUser.email,
+                googleId: googleUser.googleId,
+                role,
+                password: null // No password for Google users
+            });
+        }
+        
+        const token = authService.generateToken(user._id);
+        return { token, user };
+    }
+
     async sendOTP(identifier) {
         if (!identifier) {
             throw new Error("Email or phone is required");
@@ -49,11 +91,14 @@ class AuthController {
         
         await userService.updateOTP(user._id, otp, expiry);
         
+        // In production, send OTP via email/SMS here
         const isEmail = identifier.includes('@');
+        console.log(`OTP for ${identifier}: ${otp}`); // For testing
+        
         return { 
             success: true, 
             message: `OTP sent to ${isEmail ? 'email' : 'phone'}`, 
-            otp 
+            otp // Remove in production
         };
     }
 
