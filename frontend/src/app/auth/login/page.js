@@ -20,6 +20,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
+import { graphqlRequest } from "@/lib/apollo-client";
+import { SEND_OTP_MUTATION, RESET_PASSWORD_MUTATION } from "@/lib/graphql/auth";
 
 function AuthContainer() {
   const router = useRouter();
@@ -41,6 +43,55 @@ function AuthContainer() {
     farmLocation: "",
     address: "",
   });
+
+  // Forgot Password State
+  const [resetData, setResetData] = useState({
+    identifier: "",
+    otp: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    try {
+      const data = await graphqlRequest(SEND_OTP_MUTATION, { identifier: resetData.identifier });
+      if (data.sendOTP.success) {
+        setMode("verify_otp");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to send OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (resetData.newPassword !== resetData.confirmPassword) {
+      setError("Passwords do not match"); // Ideally use setResetError if wanted separate
+      return;
+    }
+    setIsLoading(true);
+    setError("");
+    try {
+      const data = await graphqlRequest(RESET_PASSWORD_MUTATION, {
+        identifier: resetData.identifier,
+        otp: resetData.otp,
+        newPassword: resetData.newPassword
+      });
+      if (data.resetPassword.success) {
+        setMode("login");
+        setError("Password reset successful. Please login."); // Using error state for success msg temporarily or add success state
+      }
+    } catch (err) {
+      setError(err.message || "Failed to reset password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -205,12 +256,16 @@ function AuthContainer() {
                 className="flex flex-col h-full justify-center"
               >
                 <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tight uppercase">
-                  {mode === "login" ? "Sign In" : "Sign Up"}
+                  {mode === "login" ? "Sign In" : mode === "signup" ? "Sign Up" : mode === "forgot_password" ? "Reset Password" : "Verify OTP"}
                 </h1>
                 <p className="text-slate-400 mb-6 text-sm font-medium">
                   {mode === "login"
                     ? "Access your dashboard."
-                    : "Create an account to join the network."}
+                    : mode === "signup"
+                    ? "Create an account to join the network."
+                    : mode === "forgot_password"
+                    ? "Enter your email or phone to receive OTP."
+                    : "Enter the OTP sent to your device."}
                 </p>
 
                 {error && (
@@ -219,6 +274,7 @@ function AuthContainer() {
                   </div>
                 )}
 
+                {(mode === "login" || mode === "signup") && (
                 <div className="bg-slate-100 p-1 rounded-2xl flex border border-slate-200 mb-8 shrink-0">
                   <button
                     type="button"
@@ -235,8 +291,73 @@ function AuthContainer() {
                     Consumer
                   </button>
                 </div>
+                )}
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <form className="space-y-4" onSubmit={mode === "forgot_password" ? handleForgotPassword : mode === "verify_otp" ? handleResetPassword : handleSubmit}>
+                  {mode === "forgot_password" && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                        Email or Phone
+                      </label>
+                      <div className="relative group">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
+                          <input
+                            type="text"
+                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                            placeholder="Enter your registered email/phone"
+                            value={resetData.identifier}
+                            onChange={(e) => setResetData({...resetData, identifier: e.target.value})}
+                          />
+                      </div>
+                    </div>
+                  )}
+
+                  {mode === "verify_otp" && (
+                    <div className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                            OTP Code
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none tracking-widest text-center font-bold"
+                            placeholder="• • • • • •"
+                            value={resetData.otp}
+                            onChange={(e) => setResetData({...resetData, otp: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                            New Password
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                            placeholder="New Password"
+                            value={resetData.newPassword}
+                            onChange={(e) => setResetData({...resetData, newPassword: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                            Confirm Password
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                            placeholder="Confirm Password"
+                            value={resetData.confirmPassword}
+                            onChange={(e) => setResetData({...resetData, confirmPassword: e.target.value})}
+                          />
+                        </div>
+                    </div>
+                  )}
+                  {(mode === "login" || mode === "signup") && (
+                    <>
                   {mode === "signup" && (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
@@ -355,6 +476,20 @@ function AuthContainer() {
                       </button>
                     </div>
                   </div>
+                  </>
+                  )}
+
+                  {mode === "login" && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setMode("forgot_password")}
+                        className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                  )}
 
                   <div className="pt-4">
                     <button
@@ -366,7 +501,11 @@ function AuthContainer() {
                         ? "Processing..."
                         : mode === "login"
                           ? "Sign In"
-                          : "Join Network"}{" "}
+                          : mode === "signup"
+                          ? "Join Network"
+                          : mode === "forgot_password"
+                          ? "Send OTP"
+                          : "Reset Password"}{" "}
                       <ArrowRight className="w-4 h-4 text-emerald-200" />
                     </button>
                   </div>
