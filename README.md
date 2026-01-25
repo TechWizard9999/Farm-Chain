@@ -79,3 +79,32 @@ We leverage a hybrid architecture combining a user-friendly **Next.js Frontend**
 ---
 
 *FarmChain is a concept project aimed at revolutionizing the agricultural landscape through decentralized technology.*
+
+## Project Setup
+- Clone the Repository
+- git clone <your-repo-url>
+-cd FarmChain
+
+## Setup Environment Variables
+- Make sure you have Node.js (v18+) and npm/yarn installed.
+- Make sure MongoDB can connect via your MONGO_URL.
+- Make sure you have access to your Ethereum Sepolia RPC and your smart contract addresses.
+
+## Backend Setup
+- cd backend
+- npm install
+- npm run dev
+
+## Frontend Setup
+- cd ../frontend
+- npm install
+- npm run dev
+## Verify Everything
+
+Backend is running with GraphQL and connected to MongoDB.
+
+Frontend is running and communicating with backend.
+
+Smart contract interactions work via your blockchain setup.
+
+💥 Boom! Your project is ready for development and testing.
