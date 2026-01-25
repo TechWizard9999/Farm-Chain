@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 const userResolvers = require("./userResolver");
 const farmResolver = require("./farmResolver");
 const batchResolver = require("./batchResolver");
@@ -36,6 +37,30 @@ const resolvers = {
   Bid: auctionResolver.Bid,
   Review: reviewResolver.Review,
   Batch: batchResolver.Batch,
+=======
+const userResolvers = require('./userResolver');
+const farmResolver = require('./farmResolver');
+const batchResolver = require('./batchResolver');
+const profileResolver = require('./profileResolver');
+const geocodingResolver = require('./geocodingResolver');
+
+const resolvers = {
+    Query: {
+        ...userResolvers.Query,
+        ...farmResolver.Query,
+        ...batchResolver.Query,
+        ...profileResolver.Query,
+        ...geocodingResolver.Query
+    },
+    Mutation: {
+        ...userResolvers.Mutation,
+        ...farmResolver.Mutation,
+        ...batchResolver.Mutation,
+        ...profileResolver.Mutation
+    },
+    User: userResolvers.User,
+    Batch: batchResolver.Batch
+>>>>>>> Stashed changes
 };
 
 module.exports = resolvers;

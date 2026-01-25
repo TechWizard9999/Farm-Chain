@@ -16,12 +16,12 @@ class AuthController {
         }
 
         const hashedPassword = await authService.hashPassword(password);
-        const user = await userService.create({ 
-            name, 
-            email, 
-            phone, 
+        const user = await userService.create({
+            name,
+            email,
+            phone,
             password: hashedPassword,
-            role 
+            role
         });
         const token = authService.generateToken(user._id);
 
@@ -44,36 +44,36 @@ class AuthController {
     }
 
     async googleAuth(googleToken, role = 'user') {
-        // Verify Google token
+
         const googleUser = await googleAuthService.verifyToken(googleToken);
-        
-        // Check if user exists by Google ID
+
+
         let user = await userService.findByGoogleId(googleUser.googleId);
-        
+
         if (!user) {
-            // Check if email already exists
+
             if (googleUser.email) {
                 const existingUser = await userService.findByEmail(googleUser.email);
                 if (existingUser) {
-                    // Link Google account to existing user
+
                     user = await userService.updateProfile(existingUser._id, {
                         googleId: googleUser.googleId
                     });
                 }
             }
         }
-        
+
         if (!user) {
-            // Create new user with Google info
+
             user = await userService.create({
                 name: googleUser.name,
                 email: googleUser.email,
                 googleId: googleUser.googleId,
                 role,
-                password: null // No password for Google users
+                password: null
             });
         }
-        
+
         const token = authService.generateToken(user._id);
         return { token, user };
     }
@@ -88,17 +88,17 @@ class AuthController {
 
         const otp = otpService.generate();
         const expiry = otpService.getExpiry();
-        
+
         await userService.updateOTP(user._id, otp, expiry);
-        
-        // In production, send OTP via email/SMS here
+
+
         const isEmail = identifier.includes('@');
-        console.log(`OTP for ${identifier}: ${otp}`); // For testing
-        
-        return { 
-            success: true, 
-            message: `OTP sent to ${isEmail ? 'email' : 'phone'}`, 
-            otp // Remove in production
+        console.log(`OTP for ${identifier}: ${otp}`);
+
+        return {
+            success: true,
+            message: `OTP sent to ${isEmail ? 'email' : 'phone'}`,
+            otp
         };
     }
 
