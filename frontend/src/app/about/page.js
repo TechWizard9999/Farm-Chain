@@ -225,31 +225,64 @@ export default function AboutPage() {
             {/* ANIMATED JOURNEY MAP */}
             <JourneySection />
 
-            {/* CTA */}
+            {/* Team Members Section */}
             <div className="py-20 bg-[#022c22] text-center px-6 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10"
                     style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
                 </div>
 
-                <div className="relative z-10 max-w-3xl mx-auto">
+                <div className="relative z-10 max-w-5xl mx-auto">
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         whileInView={{ scale: 1, opacity: 1 }}
                         viewport={{ once: true }}
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to join the network?</h2>
-                        <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            <Link href="/auth/signup?role=farmer">
-                                <button className="w-full sm:w-auto px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg shadow-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
-                                    I'm a Farmer
-                                    <ArrowRight className="w-4 h-4" />
-                                </button>
-                            </Link>
-                            <Link href="/auth/signup?role=consumer">
-                                <button className="w-full sm:w-auto px-8 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold rounded-lg transition-transform hover:scale-105">
-                                    I'm a Consumer
-                                </button>
-                            </Link>
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Meet Our Team</h2>
+                        <p className="text-slate-300 mb-12 max-w-2xl mx-auto">
+                            The passionate minds behind FarmChain working to revolutionize food transparency.
+                        </p>
+                        
+                        <div className="flex flex-wrap justify-center items-start gap-6 md:gap-10">
+                            {[
+                                {
+                                    name: "Team Member - 1",
+                                    img: "/team/team1.jpg",
+                                    imgPosition: "object-center"
+                                },
+                                {
+                                    name: "Team Member - 2",
+                                    img: "/team/team2.jpg",
+                                    imgPosition: "object-center"
+                                },
+                                {
+                                    name: "Team Member - 3",
+                                    img: "/team/team3.jpg",
+                                    imgPosition: "object-top"
+                                },
+                                {
+                                    name: "Team Member - 4",
+                                    img: "/team/team4.jpg",
+                                    imgPosition: "object-center"
+                                }
+                            ].map((member, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="group"
+                                >
+                                    <div className="relative w-32 h-32 md:w-40 md:h-40 mx-auto mb-4 rounded-full overflow-hidden border-4 border-emerald-500/30 group-hover:border-emerald-400 transition-all duration-300 shadow-xl">
+                                        <img
+                                            src={member.img}
+                                            alt={member.name}
+                                            className={`w-full h-full object-cover ${member.imgPosition} group-hover:scale-110 transition-transform duration-500`}
+                                        />
+                                    </div>
+                                    <h3 className="text-white font-bold text-lg">{member.name}</h3>
+                                </motion.div>
+                            ))}
                         </div>
                     </motion.div>
                 </div>
