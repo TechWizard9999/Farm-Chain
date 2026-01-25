@@ -28,7 +28,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body className="antialiased font-sans">
+      <body className="antialiased font-sans" suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

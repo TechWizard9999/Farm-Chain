@@ -35,12 +35,14 @@ export default function ConsumerScan() {
   const [error, setError] = useState(null);
   const [qrInput, setQrInput] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const [directLoad, setDirectLoad] = useState(false); // Track if we came with QR param
   const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const qrFromUrl = searchParams.get("qr");
     if (qrFromUrl) {
-      setQrInput(qrFromUrl)
+      setDirectLoad(true); // Hide scanner UI when coming with QR param
+      setQrInput(qrFromUrl);
       handleScanWithCode(qrFromUrl);
     }
   }, [searchParams]);
@@ -110,6 +112,22 @@ export default function ConsumerScan() {
   return (
     <ConsumerLayout>
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Show loading screen when coming directly with QR param */}
+        {directLoad && isScanning ? (
+          <motion.div
+            className="flex flex-col items-center justify-center py-20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
+              <Loader2 className="w-16 h-16 text-blue-500 animate-spin relative z-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Tracing Product Journey</h2>
+            <p className="text-slate-500">Verifying blockchain records...</p>
+          </motion.div>
+        ) : (
+        <>
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -119,14 +137,14 @@ export default function ConsumerScan() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-4">
             <ScanLine className="w-5 h-5 text-blue-600" />
             <span className="text-sm font-semibold text-blue-700">
-              QR Code Scanner
+              {scanResult ? "Product Journey" : "QR Code Scanner"}
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
-            Scan Product QR Code
+            {scanResult ? scanResult.product?.title || "Product Details" : "Scan Product QR Code"}
           </h1>
           <p className="text-lg text-slate-600">
-            Instantly verify product authenticity and trace its journey
+            {scanResult ? "View the complete farm-to-table journey" : "Instantly verify product authenticity and trace its journey"}
           </p>
         </motion.div>
 
@@ -468,6 +486,7 @@ export default function ConsumerScan() {
                       setScanResult(null);
                       setQrInput("");
                       setError(null);
+                      setDirectLoad(false); // Reset so scanner can be shown again
                     }}
                     className="px-6 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                   >
@@ -477,6 +496,8 @@ export default function ConsumerScan() {
               </div>
             </div>
           </motion.div>
+        )}
+        </>
         )}
       </div>
       <ScannerModal 
