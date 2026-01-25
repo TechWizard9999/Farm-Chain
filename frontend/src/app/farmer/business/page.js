@@ -36,6 +36,7 @@ export default function BusinessPage() {
     const [myOffers, setMyOffers] = useState([]);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [showCreateAuction, setShowCreateAuction] = useState(false);
     const [showOfferModal, setShowOfferModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
@@ -74,6 +75,21 @@ export default function BusinessPage() {
 
     useEffect(() => {
         fetchData();
+        
+        // Update current time every second to keep auction expiry checks accurate
+        const timeInterval = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        
+        // Auto-refresh auctions every 30 seconds
+        const refreshInterval = setInterval(() => {
+            fetchData();
+        }, 30000);
+        
+        return () => {
+            clearInterval(timeInterval);
+            clearInterval(refreshInterval);
+        };
     }, []);
 
     const fetchData = async () => {
@@ -172,6 +188,12 @@ export default function BusinessPage() {
         }
     };
 
+    // Check if auction has expired (uses currentTime for real-time check)
+    const isAuctionExpired = (deadline) => {
+        if (!deadline) return false;
+        return new Date(deadline) < currentTime;
+    };
+
     // Format deadline safely
     const formatDeadline = (deadline) => {
         if (!deadline) return "No deadline";
@@ -182,21 +204,18 @@ export default function BusinessPage() {
         });
     };
 
-    // Check if auction has expired
-    const isAuctionExpired = (deadline) => {
-        if (!deadline) return false;
-        return new Date(deadline) < new Date();
-    };
-
     // Cancel the category logic, use search instead
     const filteredProducts = products.filter(p => 
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
         (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
     );
     
-    // Separate active and closed auctions
-    const activeAuctions = auctions.filter(a => a.status === 'open');
-    const closedAuctions = auctions.filter(a => a.status !== 'open');
+    // Separate active and closed auctions (include expired ones as closed)
+    const activeAuctions = auctions.filter(a => a.status === 'open' && !isAuctionExpired(a.deadline));
+    // Closed auctions should include:
+    // 1. Actually closed auctions (status != 'open')
+    // 2. Expired auctions (status == 'open' AND deadline passed)
+    const closedAuctions = auctions.filter(a => a.status !== 'open' || isAuctionExpired(a.deadline));
 
     const LoadingSpinner = () => (
         <div className="flex justify-center items-center py-20">
@@ -292,16 +311,18 @@ export default function BusinessPage() {
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {activeAuctions.map((auction) => (
                                         <motion.div 
                                             key={auction.id} 
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-emerald-100 group"
+                                            className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-emerald-100 group flex flex-col"
                                         >
-                                            <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 relative">
-                                                <div className={`absolute top-4 right-4 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-white/30 flex items-center gap-1 ${isAuctionExpired(auction.deadline) ? 'bg-orange-500/80' : 'bg-white/20'}`}>
+                                            {/* Card Header */}
+                                            <div className="bg-gradient-to-br from-emerald-500 via-teal-600 to-teal-700 p-4 relative flex-shrink-0">
+                                                {/* Status Badge */}
+                                                <div className={`absolute top-3 right-3 backdrop-blur-sm px-2 py-1 rounded-full text-white text-[10px] font-bold border border-white/30 flex items-center gap-1 ${isAuctionExpired(auction.deadline) ? 'bg-orange-500/80' : 'bg-white/20'}`}>
                                                     {isAuctionExpired(auction.deadline) ? (
                                                         <>
                                                             <AlertTriangle className="w-3 h-3" />
@@ -309,54 +330,71 @@ export default function BusinessPage() {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse"></span>
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse"></span>
                                                             LIVE
                                                         </>
                                                     )}
                                                 </div>
-                                                <div className="text-white mt-8">
-                                                    <h3 className="font-bold text-2xl truncate">{auction.product?.title || 'Product'}</h3>
-                                                    <p className="text-emerald-100">{auction.product?.batch?.cropName || 'Product'}</p>
+                                                
+                                                {/* Product Info */}
+                                                <div className="text-white pr-12">
+                                                    <h3 className="font-bold text-lg leading-tight truncate">{auction.product?.title || 'Product'}</h3>
+                                                    <p className="text-emerald-100 text-xs mt-1">{auction.quantity} kg</p>
                                                 </div>
                                             </div>
 
-                                            <div className="p-6">
-                                                <div className="flex justify-between items-end mb-6">
-                                                    <div>
-                                                        <p className="text-slate-400 text-xs font-bold uppercase mb-1">Highest Bid</p>
-                                                        <div className="flex items-baseline gap-1">
-                                                            <span className={`text-3xl font-black ${auction.highestBid > 0 ? "text-emerald-600" : "text-slate-400"}`}>
-                                                                {auction.highestBid > 0 ? `$${auction.highestBid}` : "No Bids"}
-                                                            </span>
-                                                            {auction.highestBid > 0 && <span className="text-emerald-500 font-medium text-sm">/kg</span>}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-slate-400 text-xs font-bold uppercase mb-1">Ends</p>
-                                                        <span className={`font-bold flex items-center justify-end gap-1 ${isAuctionExpired(auction.deadline) ? 'text-red-600' : 'text-orange-600'}`}>
-                                                            <Clock className="w-4 h-4" />
-                                                            {formatDeadline(auction.deadline)}
+                                            {/* Card Body */}
+                                            <div className="p-4 flex-1 flex flex-col justify-between">
+                                                {/* Price Section */}
+                                                <div className="text-center mb-3">
+                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Highest Bid</p>
+                                                    <div className="flex items-baseline justify-center gap-0.5">
+                                                        <span className={`text-2xl font-black ${auction.highestBid > 0 ? "text-emerald-600" : "text-slate-400"}`}>
+                                                            {auction.highestBid > 0 ? `$${auction.highestBid}` : "No Bids"}
                                                         </span>
+                                                        {auction.highestBid > 0 && <span className="text-emerald-400 text-sm font-medium">/kg</span>}
                                                     </div>
                                                 </div>
-                                                
-                                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <p className="text-slate-500 text-xs mb-1">Min Price</p>
-                                                        <p className="font-bold text-slate-700">${auction.minPricePerKg}/kg</p>
+
+                                                {/* Stats Grid */}
+                                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                                    <div className="bg-slate-50 rounded-lg p-2 text-center">
+                                                        <p className="text-slate-400 text-[10px] uppercase">Min Price</p>
+                                                        <p className="font-bold text-slate-700 text-sm">${auction.minPricePerKg}</p>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-slate-500 text-xs mb-1">Quantity</p>
-                                                        <p className="font-bold text-slate-700">{auction.quantity} kg</p>
+                                                    <div className="bg-slate-50 rounded-lg p-2 text-center">
+                                                        <p className="text-slate-400 text-[10px] uppercase">Quantity</p>
+                                                        <p className="font-bold text-slate-700 text-sm">{auction.quantity}kg</p>
                                                     </div>
                                                 </div>
+
+                                                {/* Deadline */}
+                                                <div className={`flex items-center justify-center gap-1 text-xs font-semibold py-1.5 rounded-lg mb-3 ${isAuctionExpired(auction.deadline) ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50'}`}>
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    <span>{formatDeadline(auction.deadline)}</span>
+                                                </div>
+
+                                                {/* End Auction Button - Only show if expired and has bids */}
+                                                {isAuctionExpired(auction.deadline) && auction.highestBid > 0 && (
+                                                    <button 
+                                                        onClick={() => handleEndAuction(auction.id)}
+                                                        disabled={endingAuction === auction.id}
+                                                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold py-2.5 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                                                    >
+                                                        {endingAuction === auction.id ? (
+                                                            <><Loader2 className="w-4 h-4 animate-spin" /> Ending...</>
+                                                        ) : (
+                                                            <><CheckCircle2 className="w-4 h-4" /> End & Award</>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
                                         </motion.div>
                                     ))}
                                     {activeAuctions.length === 0 && (
                                         <div className="col-span-full text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-                                            <Gavel className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                                            <p className="text-slate-500 mb-4">No active auctions</p>
+                                            <Gavel className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                            <p className="text-slate-500 font-medium mb-4">No active auctions</p>
                                             <button 
                                                 onClick={openCreateAuctionModal}
                                                 className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
@@ -544,8 +582,9 @@ export default function BusinessPage() {
                                 {closedAuctions.length > 0 ? (
                                     <div className="grid grid-cols-1 gap-4">
                                         {closedAuctions.map((auction) => {
-                                            const isAwarded = auction.status === 'awarded' || (auction.status === 'closed' && auction.highestBid > 0);
-                                            const isExpired = auction.status === 'expired' || (auction.status === 'closed' && auction.highestBid === 0);
+                                            const isTimeExpired = new Date(auction.deadline) < new Date();
+                                            const isAwarded = auction.status === 'awarded' || (auction.highestBid > 0 && (auction.status === 'closed' || isTimeExpired));
+                                            const isExpired = (auction.status === 'expired') || (auction.highestBid === 0 && (auction.status === 'closed' || isTimeExpired));
                                             const isCancelled = auction.status === 'cancelled';
                                             
                                             return (

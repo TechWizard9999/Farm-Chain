@@ -43,7 +43,18 @@ export const LIST_BATCHES_QUERY = `
   }
 `;
 
-// ... (LIST_BATCHES_SIMPLE_QUERY remains same)
+export const LIST_BATCHES_SIMPLE_QUERY = `
+  query ListBatches($farm: ID!) {
+    listBatches(farm: $farm) {
+      id
+      cropCategory
+      cropName
+      variety
+      currentState
+      stateLabel
+    }
+  }
+`;
 
 export const GET_BATCH_QUERY = `
   query GetBatch($id: ID!) {

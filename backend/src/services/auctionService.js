@@ -23,7 +23,11 @@ class AuctionService {
   }
 
   async findOpen() {
-    return Auction.find({ status: "open" })
+    // Only return auctions that are open AND deadline has not passed
+    return Auction.find({ 
+      status: "open",
+      deadline: { $gt: new Date() }  // deadline must be in the future
+    })
       .populate("farmer")
       .populate("product")
       .sort({ deadline: 1 });
@@ -112,6 +116,23 @@ class AuctionService {
   async getBidsForAuction(auctionId) {
     return Bid.find({ auction: auctionId })
       .populate("business")
+      .sort({ createdAt: -1 });
+  }
+
+  async findBidsByBidder(bidderId) {
+    // Find all bids by this bidder (either as business or user)
+    return Bid.find({
+      $or: [
+        { business: bidderId },
+        { user: bidderId }
+      ]
+    })
+      .populate({
+        path: "auction",
+        populate: {
+          path: "product"
+        }
+      })
       .sort({ createdAt: -1 });
   }
 }

@@ -29,6 +29,7 @@ type Query {
     myAuctions: [Auction!]!
     openAuctions: [Auction!]!
     auctionBids(auctionId: ID!): [Bid!]!
+    myBids: [Bid!]!
 }
 
 type Mutation {

@@ -21,10 +21,6 @@ export const MY_AUCTIONS_QUERY = `
         product {
             id
             title
-            batch {
-                id
-                cropName
-            }
         }
         minPricePerKg
         quantity
@@ -67,6 +63,28 @@ export const CLOSE_AUCTION_MUTATION = `
       id
       status
       highestBid
+    }
+  }
+`;
+
+export const MY_BIDS_QUERY = `
+  query GetMyBids {
+    myBids {
+      id
+      pricePerKg
+      bidAmount
+      status
+      createdAt
+      auction {
+        id
+        status
+        highestBid
+        quantity
+        deadline
+        product {
+          title
+        }
+      }
     }
   }
 `;

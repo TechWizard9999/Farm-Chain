@@ -14,6 +14,11 @@ const auctionResolver = {
         },
         auctionBids: async (_, { auctionId }) => {
             return auctionService.getBidsForAuction(auctionId);
+        },
+        myBids: async (_, __, context) => {
+            if (!context.business && !context.user) throw new Error("Authentication required");
+            const bidderId = context.business ? context.business._id : context.user._id;
+            return auctionService.findBidsByBidder(bidderId);
         }
     },
 

@@ -25,7 +25,13 @@ import {
     PackageCheck,
     Truck,
     ShoppingCart,
-    DollarSign
+    DollarSign,
+    Shield,
+    Link2,
+    CheckCircle2,
+    AlertCircle,
+    ExternalLink,
+    Zap
 } from 'lucide-react';
 import { graphqlRequest } from '@/lib/apollo-client';
 import { MY_FARMS_QUERY } from '@/lib/graphql/farm';
@@ -369,22 +375,52 @@ export default function BatchTracking() {
     return (
         <FarmerLayout>
             <div className="space-y-6">
-                {/* Header Actions */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold text-stone-800 mb-1">Batch Tracking</h1>
-                        <p className="text-stone-600">Create and monitor your crop batches</p>
+                {/* Hero Header */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 rounded-3xl p-8 text-white shadow-xl">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiIHN0cm9rZS13aWR0aD0iMiIvPjwvZz48L3N2Zz4=')] opacity-30"></div>
+                    
+                    {/* Blockchain decoration */}
+                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                        <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse"></div>
+                        <span className="text-xs font-medium">Blockchain Secured</span>
+                        <Link2 className="w-3.5 h-3.5" />
                     </div>
-                    <motion.button
-                        onClick={() => { resetForm(); setShowCreateModal(true); }}
-                        disabled={farms.length === 0}
-                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        whileHover={{ scale: farms.length > 0 ? 1.02 : 1, y: farms.length > 0 ? -2 : 0 }}
-                        whileTap={{ scale: farms.length > 0 ? 0.98 : 1 }}
-                    >
-                        <Plus className="w-5 h-5" />
-                        Create New Batch
-                    </motion.button>
+                    
+                    <div className="relative flex flex-col sm:flex-row gap-6 justify-between items-start sm:items-center">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-white/20 rounded-xl">
+                                    <Package className="w-6 h-6" />
+                                </div>
+                                <h1 className="text-3xl font-bold">Batch Tracking</h1>
+                            </div>
+                            <p className="text-green-100 max-w-md">
+                                Create and monitor crop batches with blockchain-verified traceability for complete supply chain transparency
+                            </p>
+                            <div className="flex items-center gap-4 mt-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-green-200" />
+                                    <span className="text-green-100">{filteredBatches.length} Batches</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-yellow-300" />
+                                    <span className="text-green-100">
+                                        {filteredBatches.reduce((acc, b) => acc + (b.activities?.filter(a => a.blockchainStatus === 'confirmed').length || 0), 0)} On-Chain
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <motion.button
+                            onClick={() => { resetForm(); setShowCreateModal(true); }}
+                            disabled={farms.length === 0}
+                            className="px-6 py-3.5 bg-white text-green-700 rounded-xl font-bold shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            whileHover={{ scale: farms.length > 0 ? 1.02 : 1 }}
+                            whileTap={{ scale: farms.length > 0 ? 0.98 : 1 }}
+                        >
+                            <Plus className="w-5 h-5" />
+                            Create New Batch
+                        </motion.button>
+                    </div>
                 </div>
 
                 {farms.length === 0 && (
@@ -424,6 +460,9 @@ export default function BatchTracking() {
                             const stateInfo = getCurrentStateInfo(batch);
                             const StateIcon = stateInfo.icon;
                             const harvested = isHarvested(batch);
+                            const confirmedCount = batch.activities?.filter(a => a.blockchainStatus === 'confirmed').length || 0;
+                            const pendingCount = batch.activities?.filter(a => a.blockchainStatus === 'pending').length || 0;
+                            const totalActivities = batch.activities?.length || 0;
 
                             return (
                                 <motion.div
@@ -433,11 +472,49 @@ export default function BatchTracking() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.1, duration: 0.5 }}
                                 >
+                                    {/* Blockchain Status Banner */}
+                                    {totalActivities > 0 && (
+                                        <div className={`px-6 py-3 flex items-center justify-between ${
+                                            confirmedCount === totalActivities 
+                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500' 
+                                                : pendingCount > 0 
+                                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                                                    : 'bg-gradient-to-r from-slate-500 to-slate-600'
+                                        }`}>
+                                            <div className="flex items-center gap-3 text-white">
+                                                <div className="p-1.5 bg-white/20 rounded-lg">
+                                                    <Link2 className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-medium text-white/80">Blockchain Status</p>
+                                                    <p className="text-sm font-bold">
+                                                        {confirmedCount === totalActivities 
+                                                            ? '✓ Fully Verified On-Chain' 
+                                                            : pendingCount > 0 
+                                                                ? `⏳ ${pendingCount} Pending Confirmation`
+                                                                : 'Partial Verification'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-right text-white">
+                                                    <p className="text-2xl font-black">{confirmedCount}/{totalActivities}</p>
+                                                    <p className="text-[10px] font-medium text-white/70 uppercase tracking-wider">On-Chain</p>
+                                                </div>
+                                                {confirmedCount === totalActivities && (
+                                                    <div className="p-2 bg-white/20 rounded-full">
+                                                        <Shield className="w-5 h-5 text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="p-6">
                                         {/* Header */}
                                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
                                             <div className="flex items-start gap-4">
-                                                <div className="p-3 bg-green-50 rounded-xl">
+                                                <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl shadow-sm">
                                                     <Package className="w-8 h-8 text-green-600" strokeWidth={2} />
                                                 </div>
                                                 <div>
@@ -446,6 +523,7 @@ export default function BatchTracking() {
                                                         {batch.variety && <span>{batch.variety} • </span>}
                                                         {batch.cropCategory}
                                                     </p>
+                                                    <p className="text-xs text-stone-400 mt-1 font-mono">ID: {batch.id.slice(-8)}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
@@ -501,139 +579,189 @@ export default function BatchTracking() {
                                         </div>
 
                                         {/* Activities Timeline & Blockchain Proof */}
-                                        <div className="mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
-                                            <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center justify-between">
-                                                <span>Journey Timeline</span>
+                                        <div className="mb-6 rounded-xl border border-stone-200 overflow-hidden">
+                                            {/* Timeline Header */}
+                                            <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-white">
+                                                    <Link2 className="w-4 h-4" />
+                                                    <span className="font-bold text-sm">Blockchain Journey Timeline</span>
+                                                </div>
                                                 <button 
                                                     onClick={(e) => { e.stopPropagation(); checkOrganicStatus(batch.id); }}
-                                                    className="text-xs text-green-600 hover:underline flex items-center gap-1"
+                                                    className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                                                 >
-                                                    {verifying[batch.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Check Organic Status'}
+                                                    {verifying[batch.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+                                                    Verify Organic
                                                 </button>
-                                            </h4>
+                                            </div>
                                             
-                                            <div className="space-y-4 relative pl-2">
-                                                {/* Vertical line connector */}
-                                                <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-stone-200" />
-                                                
-                                                {batch.activities && batch.activities.map((activity, idx) => {
-                                                    const info = getActivityInfo(activity.activityType);
-                                                    const ActIcon = info.icon;
+                                            <div className="p-4 bg-gradient-to-b from-slate-50 to-white">
+                                                <div className="space-y-4 relative pl-2">
+                                                    {/* Vertical line connector */}
+                                                    <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-300 via-emerald-400 to-slate-200" />
                                                     
-                                                    return (
-                                                        <div key={activity.id} className="relative flex items-start gap-3">
-                                                            <div className={`p-1.5 rounded-full z-10 ${info.color} ring-4 ring-white`}>
-                                                                <ActIcon className="w-3 h-3" />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex flex-wrap items-center justify-between gap-x-2">
-                                                                    <p className="text-sm font-semibold text-stone-800">{info.label}</p>
-                                                                    <span className="text-xs text-stone-400">
-                                                                        {new Date(activity.date).toLocaleDateString()}
-                                                                    </span>
+                                                    {batch.activities && batch.activities.map((activity, idx) => {
+                                                        const info = getActivityInfo(activity.activityType);
+                                                        const ActIcon = info.icon;
+                                                        const isConfirmed = activity.blockchainStatus === 'confirmed';
+                                                        const isPending = activity.blockchainStatus === 'pending';
+                                                        
+                                                        return (
+                                                            <motion.div 
+                                                                key={activity.id} 
+                                                                className={`relative flex items-start gap-3 p-3 rounded-xl transition-all ${
+                                                                    isConfirmed 
+                                                                        ? 'bg-emerald-50/50 border border-emerald-100' 
+                                                                        : isPending 
+                                                                            ? 'bg-amber-50/50 border border-amber-100'
+                                                                            : 'bg-white border border-slate-100'
+                                                                }`}
+                                                                initial={{ opacity: 0, x: -10 }}
+                                                                animate={{ opacity: 1, x: 0 }}
+                                                                transition={{ delay: idx * 0.05 }}
+                                                            >
+                                                                <div className={`p-2 rounded-xl z-10 ${info.color} ring-4 ring-white shadow-sm`}>
+                                                                    <ActIcon className="w-4 h-4" />
                                                                 </div>
-                                                                
-                                                                <div className="flex flex-wrap items-center gap-2 mt-1">
-                                                                    {/* Blockchain Status Badge */}
-                                                                    <span className={`px-2 py-0.5 text-[10px] rounded-full font-medium border ${
-                                                                        activity.blockchainStatus === 'confirmed' 
-                                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                                                                            : activity.blockchainStatus === 'failed'
-                                                                                ? 'bg-red-50 text-red-700 border-red-100'
-                                                                                : 'bg-amber-50 text-amber-700 border-amber-100'
-                                                                    }`}>
-                                                                        {activity.blockchainStatus === 'confirmed' ? '✓ On-Chain' : 
-                                                                         activity.blockchainStatus === 'failed' ? '⚠ Failed' : '⏳ Pending'}
-                                                                    </span>
-
-                                                                    {activity.isOrganic && (
-                                                                        <span className="px-2 py-0.5 text-[10px] rounded-full font-medium bg-green-50 text-green-700 border border-green-100 flex items-center gap-1">
-                                                                            <Leaf className="w-3 h-3" /> Organic Input
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex flex-wrap items-center justify-between gap-x-2">
+                                                                        <p className="text-sm font-bold text-stone-800">{info.label}</p>
+                                                                        <span className="text-xs text-stone-400 font-medium">
+                                                                            {new Date(activity.date).toLocaleDateString()}
                                                                         </span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                                        {/* Blockchain Status Badge - Enhanced */}
+                                                                        <span className={`px-2.5 py-1 text-[10px] rounded-lg font-bold flex items-center gap-1.5 ${
+                                                                            isConfirmed 
+                                                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm' 
+                                                                                : activity.blockchainStatus === 'failed'
+                                                                                    ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white'
+                                                                                    : 'bg-gradient-to-r from-amber-400 to-orange-400 text-white'
+                                                                        }`}>
+                                                                            {isConfirmed ? (
+                                                                                <><CheckCircle2 className="w-3 h-3" /> ON-CHAIN</>
+                                                                            ) : activity.blockchainStatus === 'failed' ? (
+                                                                                <><AlertCircle className="w-3 h-3" /> FAILED</>
+                                                                            ) : (
+                                                                                <><Loader2 className="w-3 h-3 animate-spin" /> PENDING</>
+                                                                            )}
+                                                                        </span>
+
+                                                                        {activity.isOrganic && (
+                                                                            <span className="px-2 py-1 text-[10px] rounded-lg font-bold bg-green-100 text-green-700 flex items-center gap-1">
+                                                                                <Leaf className="w-3 h-3" /> ORGANIC
+                                                                            </span>
+                                                                        )}
+
+                                                                        {activity.blockchainTxHash && (
+                                                                            <a 
+                                                                                href={`https://sepolia.etherscan.io/tx/${activity.blockchainTxHash}`}
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                className="ml-auto px-2 py-1 text-[10px] font-bold bg-slate-800 text-white rounded-lg hover:bg-slate-700 flex items-center gap-1 transition-colors"
+                                                                            >
+                                                                                <ExternalLink className="w-3 h-3" /> View on Etherscan
+                                                                            </a>
+                                                                        )}
+                                                                    </div>
+                                                                    
+                                                                    {(activity.productName || activity.quantity) && (
+                                                                        <p className="text-xs text-stone-600 mt-2 px-2 py-1 bg-white/80 rounded-lg inline-block">
+                                                                            {activity.productName && <span className="font-medium">{activity.productName}</span>}
+                                                                            {activity.productName && activity.quantity && <span> • </span>}
+                                                                            {activity.quantity && <span>{activity.quantity} {activity.activityType === 'WATERING' ? 'L' : 'kg'}</span>}
+                                                                        </p>
                                                                     )}
 
-                                                                    {activity.blockchainTxHash && (
-                                                                        <a 
-                                                                            href={`https://sepolia.etherscan.io/tx/${activity.blockchainTxHash}`}
-                                                                            target="_blank"
-                                                                            rel="noreferrer"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 ml-auto"
-                                                                        >
-                                                                            View Tx ↗
-                                                                        </a>
+                                                                    {/* Block number for confirmed transactions */}
+                                                                    {activity.blockchainBlock && (
+                                                                        <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                                                                            Block #{activity.blockchainBlock}
+                                                                        </p>
                                                                     )}
                                                                 </div>
-                                                                
-                                                                {(activity.productName || activity.quantity) && (
-                                                                    <p className="text-xs text-stone-500 mt-1 pl-1 border-l-2 border-stone-200">
-                                                                        {activity.productName && <span>{activity.productName}</span>}
-                                                                        {activity.productName && activity.quantity && <span> • </span>}
-                                                                        {activity.quantity && <span>{activity.quantity} {activity.activityType === 'WATERING' ? 'L' : 'kg'}</span>}
-                                                                    </p>
-                                                                )}
-                                                            </div>
+                                                            </motion.div>
+                                                        );
+                                                    })}
+                                                    
+                                                    {(!batch.activities || batch.activities.length === 0) && (
+                                                        <div className="text-center py-6">
+                                                            <Activity className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                                                            <p className="text-sm text-stone-400">No activities recorded yet</p>
+                                                            <p className="text-xs text-stone-300">Log your first activity to start building your blockchain trail</p>
                                                         </div>
-                                                    );
-                                                })}
-                                                
-                                                {(!batch.activities || batch.activities.length === 0) && (
-                                                    <p className="text-xs text-stone-400 italic pl-8">No activities recorded yet</p>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Verification Result Badge */}
                                             {verificationResults[batch.id] && (
-                                                <div className={`mt-4  rounded-lg border  p-3 flex items-start gap-3 ${
+                                                <div className={`mx-4 mb-4 rounded-xl border-2 p-4 flex items-start gap-4 ${
                                                     verificationResults[batch.id].verified && verificationResults[batch.id].isOrganic
-                                                        ? 'bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-100' 
-                                                        : 'bg-stone-100 border-stone-200'
+                                                        ? 'bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200' 
+                                                        : 'bg-slate-50 border-slate-200'
                                                 }`}>
                                                     {verificationResults[batch.id].isOrganic ? (
-                                                        <div className="p-1 bg-white rounded-full shadow-sm text-green-600">
+                                                        <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg text-white">
                                                             <Activity className="w-4 h-4" />
+                                                            <Shield className="w-5 h-5" />
                                                         </div>
                                                     ) : (
-                                                        <Activity className="w-4 h-4 text-stone-400 mt-1" />
+                                                        <div className="p-2 bg-slate-200 rounded-xl text-slate-500">
+                                                            <AlertCircle className="w-5 h-5" />
+                                                        </div>
                                                     )}
-                                                    <div>
-                                                        <h5 className={`text-sm font-bold flex items-center gap-2 ${
+                                                    <div className="flex-1">
+                                                        <h5 className={`text-base font-bold flex items-center gap-2 ${
                                                             verificationResults[batch.id].isOrganic ? 'text-emerald-800' : 'text-stone-600'
                                                         }`}>
-                                                            {verificationResults[batch.id].isOrganic ? 'Blockchain Verified Organic' : 'Verification Incomplete'}
+                                                            {verificationResults[batch.id].isOrganic ? '✓ Blockchain Verified Organic' : 'Verification Incomplete'}
                                                         </h5>
-                                                        <p className="text-xs text-stone-500 mt-0.5">
-                                                            Verified {verificationResults[batch.id].activityCount} activities on Ethereum Sepolia
+                                                        <p className="text-sm text-stone-500 mt-1">
+                                                            Verified <strong>{verificationResults[batch.id].activityCount}</strong> activities on <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">Ethereum Sepolia</span>
                                                         </p>
                                                     </div>
+                                                    {verificationResults[batch.id].isOrganic && (
+                                                        <div className="text-right">
+                                                            <div className="text-2xl">🌿</div>
+                                                            <p className="text-[10px] text-emerald-600 font-bold uppercase">Certified</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
 
                                         {/* Actions */}
                                         <div className="border-t border-stone-100 pt-4 flex flex-wrap gap-3">
-                                            <button 
+                                            <motion.button 
                                                 onClick={() => openActivityModal(batch)}
-                                                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                                                className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all text-sm flex items-center gap-2 shadow-md hover:shadow-lg"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
                                             >
-                                                <Activity className="w-4 h-4" />
+                                                <Plus className="w-4 h-4" />
                                                 Log Activity
-                                            </button>
+                                            </motion.button>
                                             
                                             {/* Add to Product button - only enabled when harvested */}
-                                            <button 
+                                            <motion.button 
                                                 onClick={() => openProductModal(batch)}
                                                 disabled={!harvested}
-                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center gap-2 ${
+                                                className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm flex items-center gap-2 ${
                                                     harvested 
-                                                        ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                                                        ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white hover:from-purple-700 hover:to-violet-700 shadow-md hover:shadow-lg' 
                                                         : 'bg-stone-100 text-stone-400 cursor-not-allowed'
                                                 }`}
                                                 title={harvested ? 'Add to Products' : 'Log HARVEST activity first'}
+                                                whileHover={harvested ? { scale: 1.02 } : {}}
+                                                whileTap={harvested ? { scale: 0.98 } : {}}
                                             >
                                                 <ShoppingCart className="w-4 h-4" />
                                                 Add to Product
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -646,7 +774,7 @@ export default function BatchTracking() {
                 <AnimatePresence>
                     {showCreateModal && (
                         <motion.div
-                            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
@@ -659,11 +787,28 @@ export default function BatchTracking() {
                                 exit={{ scale: 0.9, y: 20 }}
                                 onClick={(e) => e.stopPropagation()}
                             >
+                                {/* Modal Header with Blockchain Badge */}
                                 <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-2xl font-bold text-stone-800">Create New Batch</h2>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-stone-800">Create New Batch</h2>
+                                        <p className="text-sm text-stone-500 mt-1">All activities will be recorded on blockchain</p>
+                                    </div>
                                     <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-stone-100 rounded-xl">
                                         <X className="w-6 h-6" />
                                     </button>
+                                </div>
+
+                                {/* Blockchain Info Banner */}
+                                <div className="mb-6 p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl text-white">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-white/10 rounded-lg">
+                                            <Link2 className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm">Blockchain-Enabled Traceability</p>
+                                            <p className="text-xs text-slate-300">Every activity logged will be immutably recorded on Ethereum Sepolia</p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {error && <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>}
@@ -775,20 +920,20 @@ export default function BatchTracking() {
                 <AnimatePresence>
                     {showActivityModal && selectedBatch && (
                         <motion.div
-                            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowActivityModal(false)}
                         >
                             <motion.div
-                                className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl"
+                                className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
                                 initial={{ scale: 0.9, y: 20 }}
                                 animate={{ scale: 1, y: 0 }}
                                 exit={{ scale: 0.9, y: 20 }}
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <h2 className="text-2xl font-bold text-stone-800">Log Activity</h2>
                                         <p className="text-sm text-stone-500 mt-1">{selectedBatch.cropName}</p>
@@ -796,6 +941,17 @@ export default function BatchTracking() {
                                     <button onClick={() => setShowActivityModal(false)} className="p-2 hover:bg-stone-100 rounded-xl">
                                         <X className="w-6 h-6" />
                                     </button>
+                                </div>
+
+                                {/* Blockchain Recording Notice */}
+                                <div className="mb-6 p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl text-white flex items-center gap-3">
+                                    <div className="p-1.5 bg-white/20 rounded-lg">
+                                        <Link2 className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold">This activity will be recorded on blockchain</p>
+                                        <p className="text-xs text-emerald-100">Immutable, verifiable, and transparent</p>
+                                    </div>
                                 </div>
 
                                 {error && <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>}
