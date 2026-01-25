@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ConsumerLayout from "@/components/consumer/ConsumerLayout";
 import { useAuth } from "@/context/AuthContext";
 import { graphqlRequest } from "@/lib/apollo-client";
-import { LIST_PRODUCTS } from "@/lib/graphql/consumer";
+import { LIST_PRODUCTS, TRACE_PRODUCT } from "@/lib/graphql/consumer";
 import {
   ScanLine,
   Shield,
@@ -23,145 +23,259 @@ import {
   Sprout,
   Truck,
   Store,
-  X
+  X,
+  Droplets,
+  FlaskConical,
+  Bug,
+  Scissors,
+  PackageCheck,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-import { useRef } from "react";
-// --- Magnified Map Card Component ---
-const MagnifiedMapCard = ({ product, onClose }) => {
+// Activity icons mapping
+const ACTIVITY_ICONS = {
+  'SEEDING': '🌱',
+  'WATERING': '💧',
+  'FERTILIZER': '🧪',
+  'PESTICIDE': '🐛',
+  'HARVEST': '✂️',
+  'PACKED': '📦',
+  'SHIPPED': '🚚',
+  'planted': '🌱',
+  'seeding': '🌱',
+  'irrigation': '💧',
+  'watering': '💧',
+  'default': '🌿'
+};
+
+const getActivityIcon = (type) => {
+  const key = type?.toLowerCase() || 'default';
+  return ACTIVITY_ICONS[key] || ACTIVITY_ICONS['default'];
+};
+
+// --- Product Journey Modal Component ---
+const ProductJourneyModal = ({ product, journeyData, loading, onClose }) => {
+  const timelineRef = useRef(null);
+  
+  // Auto-scroll to last milestone when journey data loads
+  useEffect(() => {
+    if (journeyData?.timeline?.length > 0 && timelineRef.current) {
+      setTimeout(() => {
+        timelineRef.current.scrollTo({
+          left: timelineRef.current.scrollWidth,
+          behavior: 'smooth'
+        });
+      }, 500); // Delay to allow animations to complete
+    }
+  }, [journeyData]);
+
   if (!product) return null;
 
-  const journeySteps = [
-     { icon: Sprout, label: "Harvest", date: "Jan 20", location: "Farm" },
-     { icon: Shield, label: "Verified", date: "Jan 21", location: " QC Lab" },
-     { icon: Truck, label: "Transit", date: "Jan 22", location: "Logistics" },
-     { icon: Store, label: "Retail", date: "Jan 24", location: "Store" },
-  ];
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "Invalid Date";
+    return date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <motion.div 
-       className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-12 pointer-events-auto"
+       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 pointer-events-auto"
        initial={{ opacity: 0 }}
        animate={{ opacity: 1 }}
        exit={{ opacity: 0 }}
     >
        {/* Backdrop */}
-       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
        <motion.div 
-          layoutId={`product-card-${product.id}`}
-          className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden relative z-10 flex flex-col max-h-[85vh] sm:max-h-[800px]"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
        >
-          {/* Header Image Area */}
-          <div className="h-48 bg-slate-50 relative shrink-0 overflow-hidden">
-             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-blue-600/10" />
-             
-             {/* Decorative Circles */}
-             <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-             <div className="absolute bottom-0 left-0 w-56 h-56 bg-blue-500/10 rounded-full blur-2xl translate-y-1/4 -translate-x-1/4" />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+              <p className="text-slate-500 font-medium">Loading product journey...</p>
+            </div>
+          ) : journeyData ? (
+            <>
+              {/* Verified Banner */}
+              <div className={`py-6 px-8 text-center ${journeyData.isVerified ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <CheckCircle2 className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {journeyData.isVerified ? 'Product Verified! ✓' : 'Verification Pending'}
+                </h2>
+                <p className="text-white/80 text-sm mt-1">
+                  {journeyData.isVerified ? 'This product is authentic and blockchain-verified' : 'Product information retrieved'}
+                </p>
+              </div>
 
-             <div className="absolute top-6 right-6 z-20">
-                <button 
-                  className="bg-white/80 backdrop-blur-md p-3 rounded-full hover:bg-white text-slate-500 hover:text-slate-900 transition-all shadow-sm active:scale-95" 
-                  onClick={onClose}
-                >
-                   <X size={20} strokeWidth={2.5} />
-                </button>
-             </div>
-             
-             <div className="absolute -bottom-12 left-10 z-10">
-                <div className="w-28 h-28 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 flex items-center justify-center text-6xl border-4 border-white transform rotate-3">
-                   {/* Emoji placeholder */}
-                   🌿 
-                </div> 
-             </div>
-          </div>
+              {/* Close Button */}
+              <button 
+                className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/40 text-white transition-all z-20" 
+                onClick={onClose}
+              >
+                <X size={20} strokeWidth={2.5} />
+              </button>
 
-          <div className="pt-16 px-6 sm:px-10 pb-8 bg-white overflow-y-auto custom-scrollbar flex-1">
-             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-                <div>
-                   <h2 className="text-3xl font-black text-slate-900 leading-tight mb-2">{product.title}</h2>
-                   <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg flex items-center gap-1">
-                         <Leaf size={14} className="text-emerald-500"/> {product.farmer?.name}
+              {/* Content */}
+              <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+                {/* Product Info */}
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-800 mb-1">
+                      {journeyData.product?.title || product.title}
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      QR Code: {journeyData.product?.qrCode || product.qrCode}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 mb-1">Overall Score</p>
+                    <p className="text-3xl font-bold text-emerald-600">
+                      {journeyData.scores?.overall || 0}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Farm & Batch Info */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <MapPin className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Farm Location</p>
+                      <p className="font-semibold text-slate-800 text-sm">
+                        {journeyData.farm?.latitude
+                          ? `${journeyData.farm.latitude.toFixed(4)}, ${journeyData.farm.longitude.toFixed(4)}`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Calendar className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Harvest Date</p>
+                      <p className="font-semibold text-slate-800 text-sm">
+                        {formatDate(journeyData.batch?.harvestDate)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Journey Timeline */}
+                {journeyData.timeline && journeyData.timeline.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Journey Milestone Map</h4>
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+                        <CheckCircle2 size={12} strokeWidth={3} /> Verified Chain
                       </span>
-                      {product.isOrganic && (
-                         <span className="text-xs font-black uppercase text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
-                            <CheckCircle2 size={12}/> Organic Verified
-                         </span>
-                      )}
-                   </div>
-                </div>
-                <div className="text-left sm:text-right">
-                   <p className="text-4xl font-black text-slate-900 tracking-tight">₹{product.pricePerKg}</p>
-                   <p className="text-xs font-bold text-emerald-600 mt-1 uppercase tracking-wider">Available Now</p>
-                </div>
-             </div>
+                    </div>
+                    
+                    <div ref={timelineRef} className="flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory">
+                      {journeyData.timeline.map((step, idx) => {
+                        const isLast = idx === journeyData.timeline.length - 1;
+                        return (
+                          <motion.div 
+                            key={idx}
+                            className="flex flex-col items-center min-w-[200px] snap-center relative"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                          >
+                            {/* Connector Line */}
+                            {idx < journeyData.timeline.length - 1 && (
+                              <div className="absolute top-8 left-[50%] w-full h-1 bg-slate-100 -z-10">
+                                <motion.div 
+                                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 origin-left"
+                                  initial={{ scaleX: 0 }}
+                                  animate={{ scaleX: 1 }}
+                                  transition={{ duration: 0.5, delay: idx * 0.2 + 0.3 }}
+                                />
+                              </div>
+                            )}
 
-             {/* MAP STRUCTURE - REVISED ALIGNMENT */}
-             <div className="bg-slate-50/80 rounded-[2rem] p-6 sm:p-8 mb-8 relative border border-slate-100">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Product Journey Timeline</h3>
-                
-                {/* Line Layer - Perfectly Aligned */}
-                <div className="absolute top-[5rem] bottom-12 left-[3rem] sm:left-[3.5rem] w-0.5 bg-slate-200 -translate-x-1/2 rounded-full" />
-                
-                {/* Animated Line Fill */}
-                <motion.div 
-                    className="absolute top-[5rem] left-[3rem] sm:left-[3.5rem] w-0.5 bg-emerald-500 origin-top -translate-x-1/2 rounded-full"
-                    initial={{ height: 0 }}
-                    animate={{ height: "75%" }}
-                    transition={{ duration: 1.5, ease: "easeInOut", delay: 0.2 }}
-                />
-
-                <div className="space-y-6 relative z-10">
-                   {journeySteps.map((step, idx) => (
-                      <motion.div 
-                        key={idx}
-                        className="flex items-center gap-5 sm:gap-6"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.2 }}
-                      >
-                         {/* Dot Column - Fixed Width for Alignment */}
-                         <div className="w-12 sm:w-16 flex justify-center shrink-0">
-                             <motion.div 
-                                className="w-5 h-5 rounded-full bg-white border-[3px] border-slate-200 relative z-10 shadow-sm"
-                                initial={{ scale: 0.5, borderColor: "#e2e8f0" }}
-                                animate={{ scale: 1, borderColor: "#10b981", backgroundColor: "#fff" }}
-                                transition={{ delay: idx * 0.2 + 0.1, duration: 0.4, type: "spring" }}
-                             >
-                                <div className="absolute inset-0 m-auto w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                             </motion.div>
-                         </div>
-
-                         {/* Content Card */}
-                         <div className="flex-1 bg-white p-5 rounded-2xl border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:border-emerald-200 hover:shadow-lg transition-all group cursor-default">
-                            <div className="flex items-center gap-4">
-                               <div className={`p-3 rounded-2xl bg-slate-50 text-slate-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all`}>
-                                  <step.icon size={20} strokeWidth={2} />
-                               </div>
-                               <div>
-                                  <h4 className="font-bold text-base text-slate-900 leading-tight">{step.label}</h4>
-                                  <p className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
-                                    <MapPin size={10} /> {step.location}
-                                  </p>
-                                </div>
+                            {/* Icon Circle */}
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl mb-4 z-10
+                              ${isLast 
+                                ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30 border-4 border-white" 
+                                : "bg-white border-4 border-slate-100 shadow-md"}`}
+                            >
+                              {step.icon || getActivityIcon(step.type)}
+                              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center
+                                ${isLast ? "bg-white text-emerald-600" : "bg-emerald-500 text-white"}`}>
+                                <CheckCircle2 size={10} strokeWidth={3} />
+                              </div>
                             </div>
-                            <span className="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 group-hover:bg-white transition-colors self-start sm:self-auto">{step.date}</span>
-                         </div>
-                      </motion.div>
-                   ))}
-                </div>
-             </div>
 
-             <Link href={`/consumer/scan?qr=${product.qrCode}`} className="block w-full">
-                <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-base shadow-xl shadow-slate-900/10 hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
-                   View Full Verification Certificate <ArrowRight size={20} />
-                </button>
-             </Link>
-          </div>
+                            {/* Card */}
+                            <div className={`p-4 rounded-2xl border text-center w-full
+                              ${isLast 
+                                ? "bg-emerald-50 border-emerald-200" 
+                                : "bg-white border-slate-100 shadow-sm"}`}
+                            >
+                              <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full mb-2 inline-block
+                                ${isLast ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                                {formatDate(step.date)}
+                              </span>
+                              <h5 className={`font-bold text-sm mb-1 ${isLast ? "text-emerald-900" : "text-slate-800"}`}>
+                                {step.title}
+                              </h5>
+                              <p className={`text-xs ${isLast ? "text-emerald-700" : "text-slate-500"}`}>
+                                {step.description}
+                              </p>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-4">
+                  <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                    <Share2 className="w-4 h-4" />
+                    Share Certificate
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 px-8">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                <X className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Product Not Found</h3>
+              <p className="text-slate-500 text-center mb-6">Unable to trace this product. It may not have journey data yet.</p>
+              <button
+                onClick={onClose}
+                className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
        </motion.div>
     </motion.div>
   );
@@ -173,6 +287,9 @@ export default function ConsumerDashboard() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scannedProducts, setScannedProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [journeyData, setJourneyData] = useState(null);
+  const [journeyLoading, setJourneyLoading] = useState(false);
    
   useEffect(() => {
     fetchProducts();
@@ -197,6 +314,50 @@ export default function ConsumerDashboard() {
       localStorage.getItem("farmchain_scan_history") || "[]",
     );
     setScannedProducts(history.slice(0, 5));
+  };
+
+  const handleTraceProduct = async (product) => {
+    setSelectedProduct(product);
+    setJourneyLoading(true);
+    setJourneyData(null);
+
+    try {
+      // Use qrCode if available, otherwise fall back to product ID
+      const traceCode = product.qrCode || product.id;
+      
+      if (!traceCode) {
+        console.error("Product has no QR code or ID");
+        setJourneyLoading(false);
+        return;
+      }
+      
+      const data = await graphqlRequest(TRACE_PRODUCT, { qrCode: traceCode });
+      if (data?.traceProduct) {
+        setJourneyData(data.traceProduct);
+        // Save to history
+        const history = JSON.parse(localStorage.getItem("farmchain_scan_history") || "[]");
+        const newEntry = {
+          id: data.traceProduct.product?.id,
+          qrCode: data.traceProduct.product?.qrCode || product.id,
+          title: data.traceProduct.product?.title,
+          farmer: data.traceProduct.farmer?.name,
+          scannedAt: new Date().toISOString(),
+          isVerified: data.traceProduct.isVerified,
+        };
+        const filtered = history.filter((h) => h.qrCode !== newEntry.qrCode);
+        localStorage.setItem("farmchain_scan_history", JSON.stringify([newEntry, ...filtered].slice(0, 50)));
+        loadScannedHistory();
+      }
+    } catch (err) {
+      console.error("Failed to trace product:", err);
+    } finally {
+      setJourneyLoading(false);
+    }
+  };
+
+  const closeJourneyModal = () => {
+    setSelectedProduct(null);
+    setJourneyData(null);
   };
 
   const getGreeting = () => {
@@ -359,12 +520,13 @@ export default function ConsumerDashboard() {
                               </div>
                           </div>
 
-                          <Link href={`/consumer/scan?qr=${product.qrCode}`} className="block">
-                            <button className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                                <ScanLine className="w-4 h-4" />
-                                Trace
-                            </button>
-                          </Link>
+                          <button 
+                            onClick={() => handleTraceProduct(product)}
+                            className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                          >
+                              <ScanLine className="w-4 h-4" />
+                              Trace
+                          </button>
                         </div>
                     </motion.div>
                   ))}
@@ -373,7 +535,17 @@ export default function ConsumerDashboard() {
            </div>
         </div>
 
-        {/* MAGNIFIED CARD OVERLAY REMOVED */}
+        {/* Journey Modal */}
+        <AnimatePresence>
+          {selectedProduct && (
+            <ProductJourneyModal
+              product={selectedProduct}
+              journeyData={journeyData}
+              loading={journeyLoading}
+              onClose={closeJourneyModal}
+            />
+          )}
+        </AnimatePresence>
          
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (

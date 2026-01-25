@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ConsumerLayout from "@/components/consumer/ConsumerLayout";
 import { graphqlRequest } from "@/lib/apollo-client";
-import { LIST_PRODUCTS } from "@/lib/graphql/consumer";
+import { LIST_PRODUCTS, TRACE_PRODUCT } from "@/lib/graphql/consumer";
 import Link from "next/link";
 import {
   Shield,
@@ -15,12 +15,254 @@ import {
   Loader2,
   Filter,
   ScanLine,
+  X,
+  Calendar,
+  Share2,
 } from "lucide-react";
+
+// Activity icons mapping
+const ACTIVITY_ICONS = {
+  'SEEDING': '🌱',
+  'WATERING': '💧',
+  'FERTILIZER': '🧪',
+  'PESTICIDE': '🐛',
+  'HARVEST': '✂️',
+  'PACKED': '📦',
+  'SHIPPED': '🚚',
+  'planted': '🌱',
+  'seeding': '🌱',
+  'irrigation': '💧',
+  'watering': '💧',
+  'default': '🌿'
+};
+
+const getActivityIcon = (type) => {
+  const key = type?.toLowerCase() || 'default';
+  return ACTIVITY_ICONS[key] || ACTIVITY_ICONS['default'];
+};
+
+// --- Product Journey Modal Component ---
+const ProductJourneyModal = ({ product, journeyData, loading, onClose }) => {
+  const timelineRef = useRef(null);
+  
+  // Auto-scroll to last milestone when journey data loads
+  useEffect(() => {
+    if (journeyData?.timeline?.length > 0 && timelineRef.current) {
+      setTimeout(() => {
+        timelineRef.current.scrollTo({
+          left: timelineRef.current.scrollWidth,
+          behavior: 'smooth'
+        });
+      }, 500); // Delay to allow animations to complete
+    }
+  }, [journeyData]);
+
+  if (!product) return null;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "Invalid Date";
+    return date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  return (
+    <motion.div 
+       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 pointer-events-auto"
+       initial={{ opacity: 0 }}
+       animate={{ opacity: 1 }}
+       exit={{ opacity: 0 }}
+    >
+       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+       <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
+       >
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+              <p className="text-slate-500 font-medium">Loading product journey...</p>
+            </div>
+          ) : journeyData ? (
+            <>
+              <div className={`py-6 px-8 text-center ${journeyData.isVerified ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <CheckCircle2 className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {journeyData.isVerified ? 'Product Verified! ✓' : 'Verification Pending'}
+                </h2>
+                <p className="text-white/80 text-sm mt-1">
+                  {journeyData.isVerified ? 'This product is authentic and blockchain-verified' : 'Product information retrieved'}
+                </p>
+              </div>
+
+              <button 
+                className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/40 text-white transition-all z-20" 
+                onClick={onClose}
+              >
+                <X size={20} strokeWidth={2.5} />
+              </button>
+
+              <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-800 mb-1">
+                      {journeyData.product?.title || product.title}
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      QR Code: {journeyData.product?.qrCode || product.qrCode}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 mb-1">Overall Score</p>
+                    <p className="text-3xl font-bold text-emerald-600">
+                      {journeyData.scores?.overall || 0}%
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <MapPin className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Farm Location</p>
+                      <p className="font-semibold text-slate-800 text-sm">
+                        {journeyData.farm?.latitude
+                          ? `${journeyData.farm.latitude.toFixed(4)}, ${journeyData.farm.longitude.toFixed(4)}`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Calendar className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Harvest Date</p>
+                      <p className="font-semibold text-slate-800 text-sm">
+                        {formatDate(journeyData.batch?.harvestDate)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {journeyData.timeline && journeyData.timeline.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Journey Milestone Map</h4>
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+                        <CheckCircle2 size={12} strokeWidth={3} /> Verified Chain
+                      </span>
+                    </div>
+                    
+                    <div ref={timelineRef} className="flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory">
+                      {journeyData.timeline.map((step, idx) => {
+                        const isLast = idx === journeyData.timeline.length - 1;
+                        return (
+                          <motion.div 
+                            key={idx}
+                            className="flex flex-col items-center min-w-[200px] snap-center relative"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                          >
+                            {idx < journeyData.timeline.length - 1 && (
+                              <div className="absolute top-8 left-[50%] w-full h-1 bg-slate-100 -z-10">
+                                <motion.div 
+                                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 origin-left"
+                                  initial={{ scaleX: 0 }}
+                                  animate={{ scaleX: 1 }}
+                                  transition={{ duration: 0.5, delay: idx * 0.2 + 0.3 }}
+                                />
+                              </div>
+                            )}
+
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl mb-4 z-10
+                              ${isLast 
+                                ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30 border-4 border-white" 
+                                : "bg-white border-4 border-slate-100 shadow-md"}`}
+                            >
+                              {step.icon || getActivityIcon(step.type)}
+                              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center
+                                ${isLast ? "bg-white text-emerald-600" : "bg-emerald-500 text-white"}`}>
+                                <CheckCircle2 size={10} strokeWidth={3} />
+                              </div>
+                            </div>
+
+                            <div className={`p-4 rounded-2xl border text-center w-full
+                              ${isLast 
+                                ? "bg-emerald-50 border-emerald-200" 
+                                : "bg-white border-slate-100 shadow-sm"}`}
+                            >
+                              <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full mb-2 inline-block
+                                ${isLast ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                                {formatDate(step.date)}
+                              </span>
+                              <h5 className={`font-bold text-sm mb-1 ${isLast ? "text-emerald-900" : "text-slate-800"}`}>
+                                {step.title}
+                              </h5>
+                              <p className={`text-xs ${isLast ? "text-emerald-700" : "text-slate-500"}`}>
+                                {step.description}
+                              </p>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-4">
+                  <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                    <Share2 className="w-4 h-4" />
+                    Share Certificate
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 px-8">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                <X className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Product Not Found</h3>
+              <p className="text-slate-500 text-center mb-6">Unable to trace this product. It may not have journey data yet.</p>
+              <button
+                onClick={onClose}
+                className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
+       </motion.div>
+    </motion.div>
+  );
+};
 
 export default function Verified() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [journeyData, setJourneyData] = useState(null);
+  const [journeyLoading, setJourneyLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -37,6 +279,37 @@ export default function Verified() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTraceProduct = async (product) => {
+    setSelectedProduct(product);
+    setJourneyLoading(true);
+    setJourneyData(null);
+
+    try {
+      // Use qrCode if available, otherwise fall back to product ID
+      const traceCode = product.qrCode || product.id;
+      
+      if (!traceCode) {
+        console.error("Product has no QR code or ID");
+        setJourneyLoading(false);
+        return;
+      }
+      
+      const data = await graphqlRequest(TRACE_PRODUCT, { qrCode: traceCode });
+      if (data?.traceProduct) {
+        setJourneyData(data.traceProduct);
+      }
+    } catch (err) {
+      console.error("Failed to trace product:", err);
+    } finally {
+      setJourneyLoading(false);
+    }
+  };
+
+  const closeJourneyModal = () => {
+    setSelectedProduct(null);
+    setJourneyData(null);
   };
 
   const getProductEmoji = (category) => {
@@ -202,18 +475,31 @@ export default function Verified() {
                           <span className="font-bold text-slate-800">{product.availableQty} kg</span>
                       </div>
 
-                      <Link href={`/consumer/scan?qr=${product.qrCode}`} className="block">
-                        <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group-hover/btn:gap-3">
-                            <ScanLine className="w-5 h-5" />
-                            Trace Journey
-                        </button>
-                      </Link>
+                      <button 
+                        onClick={() => handleTraceProduct(product)}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group-hover/btn:gap-3"
+                      >
+                          <ScanLine className="w-5 h-5" />
+                          Trace Journey
+                      </button>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
         )}
+
+        {/* Journey Modal */}
+        <AnimatePresence>
+          {selectedProduct && (
+            <ProductJourneyModal
+              product={selectedProduct}
+              journeyData={journeyData}
+              loading={journeyLoading}
+              onClose={closeJourneyModal}
+            />
+          )}
+        </AnimatePresence>
 
         {!loading && filteredProducts.length > 0 && (
           <motion.div

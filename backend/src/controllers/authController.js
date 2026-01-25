@@ -50,7 +50,12 @@ class AuthController {
         return { token, user };
     }
 
+<<<<<<< Updated upstream
     async login(identifier, password, role) {
+=======
+    // ==================== LOGIN ====================
+    async login(identifier, password) {
+>>>>>>> Stashed changes
         if (!identifier) {
             throw new Error("Email or phone is required");
         }
@@ -75,7 +80,9 @@ class AuthController {
         }
 
         const isMatch = await authService.comparePassword(password, user.password);
-        if (!isMatch) throw new Error("Incorrect password");
+        if (!isMatch) {
+            throw new Error("Incorrect password");
+        }
 
         if (role && user.role !== role) {
             throw new Error(`Please login via the ${user.role} portal.`);

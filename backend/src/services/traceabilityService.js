@@ -17,29 +17,41 @@ class TraceabilityService {
                 farmer = await User.findById(product.farmer);
             }
         } else if (qrCode.match(/^[0-9a-fA-F]{24}$/)) {
-            // Fallback: Try finding by Batch ID directly
-            batch = await Batch.findById(qrCode);
-            if (batch) {
-                farm = await Farm.findById(batch.farm);
-                if (farm) {
-                    farmer = await User.findById(farm.farmer);
+            // Fallback 1: Try finding by Product ID directly
+            product = await Product.findById(qrCode);
+            if (product) {
+                batch = await Batch.findById(product.batch);
+                if (batch) {
+                    farm = await Farm.findById(batch.farm);
+                    farmer = await User.findById(product.farmer);
                 }
+            }
+            
+            // Fallback 2: Try finding by Batch ID directly
+            if (!product) {
+                batch = await Batch.findById(qrCode);
+                if (batch) {
+                    farm = await Farm.findById(batch.farm);
+                    if (farm) {
+                        farmer = await User.findById(farm.farmer);
+                    }
 
-                // Create a virtual product wrapper for the frontend
-                product = {
-                    _id: batch._id,
-                    id: batch._id,
-                    title: `${batch.cropName}`,
-                    description: `Direct Farm Batch (${batch.variety || 'Standard'})`,
-                    category: batch.cropCategory,
-                    pricePerKg: 0,
-                    availableQty: 0,
-                    isOrganic: false, // Will be calculated
-                    qrCode: qrCode,
-                    status: 'active',
-                    createdAt: batch.createdAt,
-                    farmer: farmer ? farmer._id : null
-                };
+                    // Create a virtual product wrapper for the frontend
+                    product = {
+                        _id: batch._id,
+                        id: batch._id,
+                        title: `${batch.cropName}`,
+                        description: `Direct Farm Batch (${batch.variety || 'Standard'})`,
+                        category: batch.cropCategory,
+                        pricePerKg: 0,
+                        availableQty: 0,
+                        isOrganic: false, // Will be calculated
+                        qrCode: qrCode,
+                        status: 'active',
+                        createdAt: batch.createdAt,
+                        farmer: farmer ? farmer._id : null
+                    };
+                }
             }
         }
 
