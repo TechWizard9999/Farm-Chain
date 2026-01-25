@@ -1,4 +1,4 @@
-'use client';
+  'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { graphqlRequest } from '@/lib/apollo-client';
 import { MY_FARMS_QUERY } from '@/lib/graphql/farm';
-import { CREATE_BATCH_MUTATION, LIST_BATCHES_QUERY, DELETE_BATCH_MUTATION, LOG_ACTIVITY_MUTATION } from '@/lib/graphql/batch';
+import { CREATE_BATCH_MUTATION, LIST_BATCHES_QUERY, DELETE_BATCH_MUTATION, LOG_ACTIVITY_MUTATION, VERIFY_ORGANIC_QUERY } from '@/lib/graphql/batch';
 import { CREATE_PRODUCT_MUTATION } from '@/lib/graphql/product';
 
 const CROP_CATEGORIES = ['Vegetables', 'Fruits', 'Grains', 'Pulses', 'Spices', 'Other'];
@@ -57,6 +57,8 @@ export default function BatchTracking() {
     const [selectedBatch, setSelectedBatch] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [verificationResults, setVerificationResults] = useState({});
+    const [verifying, setVerifying] = useState({});
 
     const [formData, setFormData] = useState({
         farm: '',
@@ -74,7 +76,8 @@ export default function BatchTracking() {
         quantity: '',
         driverName: '',
         vehicleNumber: '',
-        notes: ''
+        notes: '',
+        isOrganic: false
     });
 
     const [productFormData, setProductFormData] = useState({
@@ -118,6 +121,40 @@ export default function BatchTracking() {
         }
     };
 
+    // Poll for updates if any activity is pending
+    useEffect(() => {
+        const hasPending = batches.some(b => 
+            b.activities?.some(a => a.blockchainStatus === 'pending')
+        );
+
+        if (hasPending) {
+            const interval = setInterval(() => {
+                // Silent fetch (don't set loading to true)
+                const fetchSilent = async () => {
+                    try {
+                        const farmsData = await graphqlRequest(MY_FARMS_QUERY);
+                        const myFarms = farmsData.myFarms || [];
+                        if (myFarms.length > 0) {
+                            const allBatches = [];
+                            for (const farm of myFarms) {
+                                const batchData = await graphqlRequest(LIST_BATCHES_QUERY, { farm: farm.id });
+                                if (batchData.listBatches) {
+                                    allBatches.push(...batchData.listBatches.map(b => ({ ...b, farmInfo: farm })));
+                                }
+                            }
+                            setBatches(allBatches);
+                        }
+                    } catch (e) {
+                        console.error('Polling error', e);
+                    }
+                };
+                fetchSilent();
+            }, 5000); // Check every 5 seconds
+            
+            return () => clearInterval(interval);
+        }
+    }, [batches]);
+
     const resetForm = () => {
         setFormData({
             farm: farms.length > 0 ? farms[0].id : '',
@@ -136,7 +173,10 @@ export default function BatchTracking() {
             activityType: '',
             productName: '',
             quantity: '',
-            notes: ''
+            notes: '',
+            driverName: '',
+            vehicleNumber: '',
+            isOrganic: false
         });
         setError('');
     };
@@ -189,7 +229,8 @@ export default function BatchTracking() {
                 date: new Date().toISOString(),
                 productName: activityFormData.productName || null,
                 quantity: activityFormData.quantity ? parseFloat(activityFormData.quantity) : null,
-                notes: notesContent || null
+                notes: notesContent || null,
+                isOrganic: activityFormData.isOrganic
             };
 
             const data = await graphqlRequest(LOG_ACTIVITY_MUTATION, { 
@@ -243,6 +284,21 @@ export default function BatchTracking() {
         });
         setError('');
         setShowProductModal(true);
+    };
+
+    const checkOrganicStatus = async (batchId) => {
+        setVerifying(prev => ({ ...prev, [batchId]: true }));
+        try {
+            const data = await graphqlRequest(VERIFY_ORGANIC_QUERY, { batchId });
+            setVerificationResults(prev => ({
+                ...prev,
+                [batchId]: data.verifyOrganic
+            }));
+        } catch (err) {
+            console.error('Verification failed:', err);
+        } finally {
+            setVerifying(prev => ({ ...prev, [batchId]: false }));
+        }
     };
 
     const handleCreateProduct = async (e) => {
@@ -442,6 +498,116 @@ export default function BatchTracking() {
                                                     </p>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* Activities Timeline & Blockchain Proof */}
+                                        <div className="mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
+                                            <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center justify-between">
+                                                <span>Journey Timeline</span>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); checkOrganicStatus(batch.id); }}
+                                                    className="text-xs text-green-600 hover:underline flex items-center gap-1"
+                                                >
+                                                    {verifying[batch.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Check Organic Status'}
+                                                </button>
+                                            </h4>
+                                            
+                                            <div className="space-y-4 relative pl-2">
+                                                {/* Vertical line connector */}
+                                                <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-stone-200" />
+                                                
+                                                {batch.activities && batch.activities.map((activity, idx) => {
+                                                    const info = getActivityInfo(activity.activityType);
+                                                    const ActIcon = info.icon;
+                                                    
+                                                    return (
+                                                        <div key={activity.id} className="relative flex items-start gap-3">
+                                                            <div className={`p-1.5 rounded-full z-10 ${info.color} ring-4 ring-white`}>
+                                                                <ActIcon className="w-3 h-3" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex flex-wrap items-center justify-between gap-x-2">
+                                                                    <p className="text-sm font-semibold text-stone-800">{info.label}</p>
+                                                                    <span className="text-xs text-stone-400">
+                                                                        {new Date(activity.date).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                                
+                                                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                                    {/* Blockchain Status Badge */}
+                                                                    <span className={`px-2 py-0.5 text-[10px] rounded-full font-medium border ${
+                                                                        activity.blockchainStatus === 'confirmed' 
+                                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                                                                            : activity.blockchainStatus === 'failed'
+                                                                                ? 'bg-red-50 text-red-700 border-red-100'
+                                                                                : 'bg-amber-50 text-amber-700 border-amber-100'
+                                                                    }`}>
+                                                                        {activity.blockchainStatus === 'confirmed' ? '✓ On-Chain' : 
+                                                                         activity.blockchainStatus === 'failed' ? '⚠ Failed' : '⏳ Pending'}
+                                                                    </span>
+
+                                                                    {activity.isOrganic && (
+                                                                        <span className="px-2 py-0.5 text-[10px] rounded-full font-medium bg-green-50 text-green-700 border border-green-100 flex items-center gap-1">
+                                                                            <Leaf className="w-3 h-3" /> Organic Input
+                                                                        </span>
+                                                                    )}
+
+                                                                    {activity.blockchainTxHash && (
+                                                                        <a 
+                                                                            href={`https://sepolia.etherscan.io/tx/${activity.blockchainTxHash}`}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 ml-auto"
+                                                                        >
+                                                                            View Tx ↗
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {(activity.productName || activity.quantity) && (
+                                                                    <p className="text-xs text-stone-500 mt-1 pl-1 border-l-2 border-stone-200">
+                                                                        {activity.productName && <span>{activity.productName}</span>}
+                                                                        {activity.productName && activity.quantity && <span> • </span>}
+                                                                        {activity.quantity && <span>{activity.quantity} {activity.activityType === 'WATERING' ? 'L' : 'kg'}</span>}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                
+                                                {(!batch.activities || batch.activities.length === 0) && (
+                                                    <p className="text-xs text-stone-400 italic pl-8">No activities recorded yet</p>
+                                                )}
+                                            </div>
+
+                                            {/* Verification Result Badge */}
+                                            {verificationResults[batch.id] && (
+                                                <div className={`mt-4  rounded-lg border  p-3 flex items-start gap-3 ${
+                                                    verificationResults[batch.id].verified && verificationResults[batch.id].isOrganic
+                                                        ? 'bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-100' 
+                                                        : 'bg-stone-100 border-stone-200'
+                                                }`}>
+                                                    {verificationResults[batch.id].isOrganic ? (
+                                                        <div className="p-1 bg-white rounded-full shadow-sm text-green-600">
+                                                            <Activity className="w-4 h-4" />
+                                                        </div>
+                                                    ) : (
+                                                        <Activity className="w-4 h-4 text-stone-400 mt-1" />
+                                                    )}
+                                                    <div>
+                                                        <h5 className={`text-sm font-bold flex items-center gap-2 ${
+                                                            verificationResults[batch.id].isOrganic ? 'text-emerald-800' : 'text-stone-600'
+                                                        }`}>
+                                                            {verificationResults[batch.id].isOrganic ? 'Blockchain Verified Organic' : 'Verification Incomplete'}
+                                                        </h5>
+                                                        <p className="text-xs text-stone-500 mt-0.5">
+                                                            Verified {verificationResults[batch.id].activityCount} activities on Ethereum Sepolia
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Actions */}
@@ -661,20 +827,35 @@ export default function BatchTracking() {
                                     </div>
 
                                     {(activityFormData.activityType === 'FERTILIZER' || activityFormData.activityType === 'PESTICIDE') && (
-                                        <div>
-                                            <label className="block text-sm font-semibold text-stone-700 mb-2">
-                                                {activityFormData.activityType === 'FERTILIZER' ? 'Fertilizer Name *' : 'Pesticide Name *'}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={activityFormData.productName}
-                                                onChange={(e) => setActivityFormData(prev => ({ ...prev, productName: e.target.value }))}
-                                                required
-                                                placeholder={activityFormData.activityType === 'FERTILIZER' 
-                                                    ? "e.g., Urea, DAP, NPK, Compost" 
-                                                    : "e.g., Neem Oil, Imidacloprid, Bio-pesticide"}
-                                                className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
-                                            />
+                                        <div className="space-y-5">
+                                            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
+                                                <input
+                                                    type="checkbox"
+                                                    id="isOrganicInput"
+                                                    checked={activityFormData.isOrganic}
+                                                    onChange={(e) => setActivityFormData(prev => ({ ...prev, isOrganic: e.target.checked }))}
+                                                    className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                                                />
+                                                <label htmlFor="isOrganicInput" className="font-semibold text-green-800 flex items-center gap-2 cursor-pointer select-none">
+                                                    <Leaf className="w-4 h-4" />
+                                                    This is an organic/natural input
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-stone-700 mb-2">
+                                                    {activityFormData.activityType === 'FERTILIZER' ? 'Fertilizer Name *' : 'Pesticide Name *'}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={activityFormData.productName}
+                                                    onChange={(e) => setActivityFormData(prev => ({ ...prev, productName: e.target.value }))}
+                                                    required
+                                                    placeholder={activityFormData.activityType === 'FERTILIZER' 
+                                                        ? "e.g., Urea, DAP, NPK, Compost" 
+                                                        : "e.g., Neem Oil, Imidacloprid, Bio-pesticide"}
+                                                    className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
+                                                />
+                                            </div>
                                         </div>
                                     )}
 

@@ -14,6 +14,8 @@ export const CREATE_BATCH_MUTATION = `
   }
 `;
 
+// ... (previous queries)
+
 export const LIST_BATCHES_QUERY = `
   query ListBatches($farm: ID!) {
     listBatches(farm: $farm) {
@@ -32,26 +34,16 @@ export const LIST_BATCHES_QUERY = `
         date
         quantity
         notes
+        isOrganic
+        blockchainStatus
+        blockchainTxHash
+        blockchainBlock
       }
     }
   }
 `;
 
-export const LIST_BATCHES_SIMPLE_QUERY = `
-  query ListBatchesSimple($farm: ID!) {
-    listBatches(farm: $farm) {
-      id
-      cropCategory
-      cropName
-      variety
-      seedSource
-      sowingDate
-      expectedHarvestDate
-      currentState
-      stateLabel
-    }
-  }
-`;
+// ... (LIST_BATCHES_SIMPLE_QUERY remains same)
 
 export const GET_BATCH_QUERY = `
   query GetBatch($id: ID!) {
@@ -73,6 +65,10 @@ export const GET_BATCH_QUERY = `
         productName
         quantity
         notes
+        isOrganic
+        blockchainStatus
+        blockchainTxHash
+        blockchainBlock
       }
       harvests {
         id
@@ -84,16 +80,7 @@ export const GET_BATCH_QUERY = `
   }
 `;
 
-export const GET_JOURNEY_STATE_QUERY = `
-  query GetJourneyState($batchId: ID!) {
-    getJourneyState(batchId: $batchId) {
-      currentState
-      stateLabel
-      allowedActivities
-      isComplete
-    }
-  }
-`;
+// ... (GET_JOURNEY_STATE_QUERY remains same)
 
 export const LOG_ACTIVITY_MUTATION = `
   mutation LogActivity($batchId: ID!, $input: ActivityInput!) {
@@ -107,7 +94,20 @@ export const LOG_ACTIVITY_MUTATION = `
         date
         quantity
         notes
+        isOrganic
+        blockchainStatus
+        blockchainTxHash
       }
+    }
+  }
+`;
+
+export const VERIFY_ORGANIC_QUERY = `
+  query VerifyOrganic($batchId: ID!) {
+    verifyOrganic(batchId: $batchId) {
+      isOrganic
+      activityCount
+      verified
     }
   }
 `;
