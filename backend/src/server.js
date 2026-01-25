@@ -1,5 +1,8 @@
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
+const express = require('express');
+const http = require('http');
+const cors = require('cors');
 const connectDB = require('../config/database');
 const typeDefs = require('./graphql/schemas');
 const resolvers = require('./graphql/resolvers');
@@ -8,24 +11,20 @@ const businessController = require('./controllers/businessController');
 
 const PORT = process.env.PORT || 4000;
 
-const createServer = () => {
-    return new ApolloServer({
-        typeDefs,
-        resolvers,
-        csrfPrevention: false,
-        introspection: true,
-        formatError: (error) => {
-            console.error('GraphQL Error:', error);
-            return error;
-        },
-    });
-};
-
 const startServer = async () => {
     try {
         await connectDB();
 
-        const server = createServer();
+        const server = new ApolloServer({
+            typeDefs,
+            resolvers,
+            csrfPrevention: false,
+            introspection: true,
+            formatError: (error) => {
+                console.error('GraphQL Error:', error);
+                return error;
+            },
+        });
 
         const { url } = await startStandaloneServer(server, {
             listen: { port: PORT },
@@ -38,12 +37,11 @@ const startServer = async () => {
         });
 
         console.log(`Server ready at ${url}`);
-        console.log(`GraphQL endpoint: ${url}graphql`);
     } catch (error) {
         console.error('Error starting server:', error);
         process.exit(1);
     }
 };
 
-module.exports = { createServer, startServer };
+module.exports = { startServer };
 

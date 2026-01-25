@@ -9,6 +9,7 @@ const auctionResolver = require("./auctionResolver");
 const reviewResolver = require("./reviewResolver");
 const profileResolver = require("./profileResolver");
 const geocodingResolver = require("./geocodingResolver");
+const productRequestResolver = require("./productRequestResolver");
 
 const resolvers = {
     Query: {
@@ -21,7 +22,8 @@ const resolvers = {
         ...auctionResolver.Query,
         ...reviewResolver.Query,
         ...profileResolver.Query,
-        ...geocodingResolver.Query
+        ...geocodingResolver.Query,
+        ...productRequestResolver.Query
     },
     Mutation: {
         ...userResolvers.Mutation,
@@ -32,9 +34,11 @@ const resolvers = {
         ...orderResolver.Mutation,
         ...auctionResolver.Mutation,
         ...reviewResolver.Mutation,
-        ...profileResolver.Mutation
+        ...profileResolver.Mutation,
+        ...productRequestResolver.Mutation
     },
     User: userResolvers.User,
+    Farm: farmResolver.Farm,
     Business: businessResolver.Business,
     Product: productResolver.Product,
     Order: orderResolver.Order,

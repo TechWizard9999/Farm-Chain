@@ -34,7 +34,7 @@ class AuctionService {
     return await auction.save();
   }
 
-  async placeBid(auctionId, businessId, pricePerKg) {
+  async placeBid(auctionId, bidderId, pricePerKg, bidderType = 'business') {
     const auction = await Auction.findById(auctionId);
     if (!auction) throw new Error("Auction not found");
     if (auction.status !== "open") throw new Error("Auction is not open");
@@ -42,17 +42,26 @@ class AuctionService {
     if (pricePerKg <= auction.highestBid)
       throw new Error(`Bid must be higher than ${auction.highestBid}`);
 
-    const bid = new Bid({
+    const bidData = {
       auction: auctionId,
-      business: businessId,
       pricePerKg,
       quantity: auction.quantity,
       bidAmount: pricePerKg * auction.quantity,
-    });
+    };
+
+    // Support both business and user bids
+    if (bidderType === 'user') {
+      bidData.user = bidderId;
+    } else {
+      bidData.business = bidderId;
+    }
+
+    const bid = new Bid(bidData);
     await bid.save();
 
     auction.highestBid = pricePerKg;
-    auction.highestBidder = businessId;
+    auction.highestBidder = bidderId;
+    auction.highestBidderType = bidderType === 'user' ? 'User' : 'Business';
     await auction.save();
 
     return this.findById(auctionId);

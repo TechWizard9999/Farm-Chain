@@ -76,6 +76,7 @@ const batchResolver = {
     },
     
     Batch: {
+        id: (parent) => parent._id.toString(),
         stateLabel: (parent) => {
             return getStateLabel(parent.currentState || "idle");
         }

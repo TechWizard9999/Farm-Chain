@@ -35,7 +35,7 @@ const productResolver = {
                 minOrderQty: minOrderQty || 1,
                 photos: photos || [],
                 isOrganic: isOrganic || false,
-                status: 'draft'
+                status: 'active'
             });
         },
 

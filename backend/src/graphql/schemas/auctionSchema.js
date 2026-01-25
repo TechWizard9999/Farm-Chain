@@ -32,7 +32,7 @@ type Query {
 }
 
 type Mutation {
-    createAuction(productId: ID!, batchId: ID!, minPricePerKg: Float!, quantity: Float!, deadlineHours: Int!): Auction!
+    createAuction(productId: ID!, batchId: ID!, minPricePerKg: Float!, quantity: Float!, deadline: String!): Auction!
     placeBid(auctionId: ID!, pricePerKg: Float!): Auction!
     closeAuction(auctionId: ID!): Auction!
     awardAuction(auctionId: ID!): Auction!

@@ -8,6 +8,7 @@ const auctionSchema = require("./auctionSchema");
 const reviewSchema = require("./reviewSchema");
 const profileSchema = require("./profileSchema");
 const geocodingSchema = require("./geocodingSchema");
+const productRequestSchema = require("./productRequestSchema");
 
 const typeDefs = [
     userSchema,
@@ -19,8 +20,8 @@ const typeDefs = [
     auctionSchema,
     reviewSchema,
     profileSchema,
-    geocodingSchema
-
+    geocodingSchema,
+    productRequestSchema
 ];
 
 module.exports = typeDefs;

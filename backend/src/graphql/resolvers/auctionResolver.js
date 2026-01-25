@@ -18,11 +18,16 @@ const auctionResolver = {
     },
 
     Mutation: {
-        createAuction: async (_, { productId, batchId, minPricePerKg, quantity, deadlineHours }, context) => {
+        createAuction: async (_, { productId, batchId, minPricePerKg, quantity, deadline }, context) => {
             if (!context.user) throw new Error("Farmer auth required");
             
-            const deadline = new Date();
-            deadline.setHours(deadline.getHours() + deadlineHours);
+            const deadlineDate = new Date(deadline);
+            if (isNaN(deadlineDate.getTime())) {
+                throw new Error("Invalid deadline date");
+            }
+            if (deadlineDate <= new Date()) {
+                 throw new Error("Deadline must be in the future");
+            }
 
             return auctionService.create({
                 farmer: context.user._id,
@@ -30,14 +35,19 @@ const auctionResolver = {
                 batch: batchId,
                 minPricePerKg,
                 quantity,
-                deadline,
-                status: 'open'
+                deadline: deadlineDate
             });
         },
 
         placeBid: async (_, { auctionId, pricePerKg }, context) => {
-            if (!context.business) throw new Error("Business auth required");
-            return auctionService.placeBid(auctionId, context.business._id, pricePerKg);
+            // Allow both businesses and consumers to place bids
+            if (!context.business && !context.user) throw new Error("Authentication required");
+            
+            if (context.business) {
+                return auctionService.placeBid(auctionId, context.business._id, pricePerKg, 'business');
+            } else {
+                return auctionService.placeBid(auctionId, context.user._id, pricePerKg, 'user');
+            }
         },
 
         closeAuction: async (_, { auctionId }, context) => {

@@ -15,6 +15,7 @@ import {
   LogOut,
   Leaf,
   Bell,
+  Gavel,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ const navigation = [
     icon: PackageSearch,
   },
   { name: "Products", href: "/farmer/products", icon: ShoppingCart },
+  { name: "Business Hub", href: "/farmer/business", icon: Gavel },
   { name: "Wallet", href: "/farmer/wallet", icon: Wallet },
   { name: "Earnings", href: "/farmer/earnings", icon: TrendingUp },
   { name: "Profile", href: "/farmer/profile", icon: User },

@@ -7,7 +7,8 @@ const auctionSchema = new mongoose.Schema({
     minPricePerKg: { type: Number, required: true },
     quantity: { type: Number, required: true },
     highestBid: { type: Number, default: 0 },
-    highestBidder: { type: mongoose.Schema.Types.ObjectId, ref: "Business" },
+    highestBidder: { type: mongoose.Schema.Types.ObjectId, refPath: 'highestBidderType' },
+    highestBidderType: { type: String, enum: ['Business', 'User'], default: 'Business' },
     deadline: { type: Date, required: true },
     status: { 
         type: String, 

@@ -17,8 +17,14 @@ const farmResolver = {
   },
   Mutation: {
     createFarm: async (_, args, context) => {
+      console.log("createFarm mutation called", args);
       if (!context.user) throw new Error("Unauthorized");
-      return farmService.create({ ...args, farmer: context.user._id });
+      try {
+        return await farmService.create({ ...args, farmer: context.user._id });
+      } catch (error) {
+        console.error("createFarm error:", error);
+        throw error;
+      }
     },
     updateFarm: async (_, args, context) => {
       if (!context.user) throw new Error("Unauthorized");

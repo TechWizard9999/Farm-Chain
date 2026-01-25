@@ -21,6 +21,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/consumer/dashboard", icon: LayoutDashboard },
+  { name: "Marketplace", href: "/consumer/business", icon: ShoppingBag },
   { name: "Scan QR Code", href: "/consumer/scan", icon: ScanLine },
   { name: "Journey History", href: "/consumer/journey", icon: Route },
   { name: "Verified Products", href: "/consumer/verified", icon: Shield },
