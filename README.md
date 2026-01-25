@@ -2,123 +2,76 @@
 
 **Blockchain-Powered Agricultural Supply Chain Transparency Platform**
 
-## Overview
+---
 
-FarmChain is a platform designed to address transparency and trust issues in the agricultural supply chain by using blockchain technology to create an immutable record of produce from farm to consumer.
+## 🚨 The Problem
 
-## The Problem
+India's agricultural supply chain faces several critical systemic issues that hurt both farmers and consumers:
 
-India's agricultural supply chain faces several critical issues:
+- **Critically Low Farmer Income**  
+  Farmers receive only **16-20%** of the final consumer price, with the remaining **80%** absorbed by a chain of intermediaries.
+  
+- **Widespread Fraud & Mislabeling**  
+  **25%** of "organic" food in India is fraudulently mislabeled, eroding consumer trust.
 
-- Farmers receive only 16-20% of the final consumer price, with the remaining 80% going to middlemen
-- 25% of organic food in India is fraudulently mislabeled
-- 66% of civil cases in India involve agricultural disputes
-- 15-20% of produce is lost post-harvest due to lack of accountability
-- Farmers face payment delays of 2-4 weeks on average
+- **Systemic Inefficiency & Waste**  
+  **15-20%** of produce is lost post-harvest due to specific lack of accountability and poor logistics.
 
-The current supply chain involves multiple intermediaries (farmer → trader → wholesaler → retailer → consumer), each taking a significant cut while adding minimal value. This creates poverty for farmers despite their hard work, and leaves consumers unable to verify the quality, origin, or organic status of their food.
+- **Payment Delays**  
+  Farmers face crippling payment delays of **2-4 weeks** on average, forcing them into debt cycles.
 
-## Solution
+- **Opaque Supply Chain**  
+  Consumers have **zero visibility** into the origin, chemical usage (pesticides/fertilizers), or freshness of their food.
 
-FarmChain creates a direct, transparent connection between farmers, businesses, and consumers using blockchain technology to verify and track agricultural products throughout the supply chain.
+---
+
+## 💡 Our Solution
+
+**FarmChain** creates a direct, immutable, and transparent connection between farmers and consumers using **Blockchain Technology**. By removing unnecessary middlemen and recording every step of the journey on a public ledger, we ensure fair pay for farmers and guaranteed quality for consumers.
+
+### 🎯 Our Approach
+
+We leverage a hybrid architecture combining a user-friendly **Next.js Frontend**, a robust **GraphQL Backend**, and a secure **Ethereum/Polygon Blockchain** layer. This ensures that while the user experience remains fast and seamless, the core data regarding product origin and quality remains tamper-proof.
+
+![System Architecture](/Users/p0b08vn/.gemini/antigravity/brain/5b7db2d3-1981-4b55-a6f6-b254d1e66ff6/uploaded_image_1769342310100.png)
+
+### Key Highlights
+
+*   **⛓️ Immutable Traceability**: Every batch of produce is logged on the blockchain from seed to harvest. A unique **QR Code** on the final product allows consumers to instantly verify its entire journey.
+*   **🌾 Farmer-Centric Marketplace**: Farmers list produce directly to businesses or consumers, bypassing traditional aggregators to capture **up to 60%** more value.
+*   **🤝 Smart Contract Escrow**: Payments are held in secure smart contracts and released **instantly** to the farmer upon verified delivery, eliminating payment delays.
+*   **✅ Verified Organic**: Organic certification is tied to blockchain records of soil inputs and farming activities, preventing certificate forgeries.
+*   **📊 Data-Driven Insights**: A comprehensive dashboard provides farmers with real-time earnings reports, crop tracking, and market analytics.
+
+---
+
+## Core Features Breakdown
 
 ### For Farmers
-
-- Register farms with GPS verification
-- Log all farming activities (seeds, fertilizers, pesticides, harvest dates)
-- List produce directly to businesses, eliminating middlemen
-- Receive instant payments through smart contracts
-- Obtain blockchain-verified organic certification
+- **GPS-Verified Registration**: Ensures listing authenticity.
+- **Activity Logging**: Easy mobile interface to log seeds, fertilizers, and harvest.
+- **Direct Sales**: Sell entire batches to businesses via competitive bidding (Reverse Auction).
+- **Earnings Dashboard**: Visualize revenue, sales trends, and top-performing crops.
 
 ### For Businesses
-
-- Browse verified produce with complete history
-- Post demand requirements and receive competitive bids from farmers
-- Verify product quality and origin before purchase
-- Pay through escrow system (funds released only upon delivery confirmation)
-- Track deliveries in real-time
+- **Verified Sourcing**: Browse produce with complete, transparent history.
+- **Escrow Payments**: Funds are safe until stock is received and verified.
+- **Supply Consistency**: Track harvest schedules to plan procurement.
 
 ### For Consumers
+- **Scan-to-Know**: Scan QR codes to see the farmer's face, farm location, and harvest date.
+- **Quality Assurance**: Verify "Organic" claims with one click.
+- **Support Local**: Direct impact on farmer livelihoods.
 
-- Scan QR codes on products to view complete journey
-- See farmer information and farm location
-- Verify organic claims through blockchain certificates
-- Check harvest dates and storage conditions
-- Make informed purchasing decisions with full transparency
-
-## Core Features
-
-**1. Complete Traceability**  
-Each product receives a unique QR code linked to its blockchain-verified journey from seed to shelf.
-
-**2. Chemical Transparency**  
-All pesticides and fertilizers are logged with WHO safety classifications.
-
-**3. Organic NFT Certificates**  
-Verified organic farms receive blockchain-based certificates that cannot be forged.
-
-**4. B2B Reverse Auction**  
-Businesses post requirements, farmers submit competitive bids, ensuring fair market pricing.
-
-**5. Smart Contract Escrow**  
-Payments are held in escrow and automatically released upon delivery confirmation.
-
-**6. Journey Visualization**  
-Interactive maps show transport routes, storage conditions, and temperature logs.
-
-## How It Works
-
-**Farmer Registration**
-- Creates farm profile with GPS location
-- Logs all farming activities on blockchain
-- Lists produce for sale
-
-**Business Ordering**
-- Browses marketplace or posts demand
-- Reviews complete farming history
-- Places order with escrow payment
-
-**Delivery Tracking**
-- GPS and temperature logged throughout journey
-- Real-time updates to all parties
-- Blockchain records every checkpoint
-
-**Confirmation & Payment**
-- Business confirms receipt
-- Smart contract releases payment to farmer
-- Both parties can rate and review
-
-**Consumer Verification**
-- Scans QR code on product
-- Views complete journey and verification
-- Makes informed purchase decision
+---
 
 ## Expected Impact
 
-**For Farmers:**
-- 2-3x higher income by eliminating middlemen
-- Instant payments instead of weeks of delays
-- Fair market value through competitive bidding
-- Reputation building through verified ratings
+*   **2-3x Increase** in Farmer Income.
+*   **100% Elimination** of payment delays via Smart Contracts.
+*   **Restored Trust** in Organic Labeling.
+*   **Reduced Food Waste** through accountable logistics.
 
-**For Businesses:**
-- Verified quality before purchase
-- Complete supply chain visibility
-- Protection from fraud
-- Build consumer trust with transparent sourcing
+---
 
-**For Consumers:**
-- Verified organic certification
-- Complete product history
-- Support farmers directly
-- Food safety confidence
-
-**For the Environment:**
-- Accountability for chemical usage
-- Incentives for organic farming
-- Optimized logistics reducing carbon footprint
-- Promotion of sustainable agriculture
-
-## Project Status
-
-This is a concept project aimed at addressing real problems in the agricultural supply chain through blockchain technology.
+*FarmChain is a concept project aimed at revolutionizing the agricultural landscape through decentralized technology.*
