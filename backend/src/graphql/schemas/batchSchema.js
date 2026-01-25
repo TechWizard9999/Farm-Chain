@@ -39,6 +39,8 @@ type Harvest {
 enum ActivityType {
   SEEDING
   WATERING
+  FERTILIZER
+  PESTICIDE
   HARVEST
   PACKED
   SHIPPED
