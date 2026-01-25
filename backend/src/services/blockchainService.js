@@ -12,16 +12,38 @@ const ACTIVITY_LOG_ABI = [
 
 class BlockchainService {
   constructor() {
-    this.provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-    this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.provider);
-    this.contract = new ethers.Contract(
-      process.env.ACTIVITY_LOG_ADDRESS,
-      ACTIVITY_LOG_ABI,
-      this.wallet
-    );
+    this.initialized = false;
+    this.initializationError = null;
     
-    console.log('✅ BlockchainService initialized');
-    console.log('📍 Contract:', process.env.ACTIVITY_LOG_ADDRESS);
+    // Check if blockchain env vars are configured
+    const privateKey = process.env.PRIVATE_KEY;
+    const rpcUrl = process.env.SEPOLIA_RPC_URL;
+    const contractAddress = process.env.ACTIVITY_LOG_ADDRESS;
+    
+    if (!privateKey || privateKey === 'your-private-key' || privateKey.length < 64) {
+      console.log('⚠️ BlockchainService: PRIVATE_KEY not configured - running in offline mode');
+      this.initializationError = 'Blockchain not configured';
+      return;
+    }
+    
+    if (!rpcUrl || !contractAddress) {
+      console.log('⚠️ BlockchainService: RPC URL or Contract address not configured');
+      this.initializationError = 'Blockchain not configured';
+      return;
+    }
+    
+    try {
+      this.provider = new ethers.JsonRpcProvider(rpcUrl);
+      this.wallet = new ethers.Wallet(privateKey, this.provider);
+      this.contract = new ethers.Contract(contractAddress, ACTIVITY_LOG_ABI, this.wallet);
+      
+      this.initialized = true;
+      console.log('✅ BlockchainService initialized');
+      console.log('📍 Contract:', contractAddress);
+    } catch (error) {
+      console.log('⚠️ BlockchainService initialization failed:', error.message);
+      this.initializationError = error.message;
+    }
   }
   
   getBatchIdHash(mongoId) {
@@ -29,6 +51,14 @@ class BlockchainService {
   }
   
   async recordActivity(batchId, activityData) {
+    if (!this.initialized) {
+      console.log('⚠️ Blockchain not initialized - skipping record activity');
+      return {
+        success: false,
+        error: this.initializationError || 'Blockchain service not initialized'
+      };
+    }
+    
     try {
       const batchIdHash = this.getBatchIdHash(batchId);
       
@@ -63,6 +93,10 @@ class BlockchainService {
   }
   
   async getBatchActivities(batchId) {
+    if (!this.initialized) {
+      return [];
+    }
+    
     try {
       const batchIdHash = this.getBatchIdHash(batchId);
       const activities = await this.contract.getBatchActivities(batchIdHash);
@@ -82,6 +116,15 @@ class BlockchainService {
   }
   
   async checkOrganicStatus(batchId) {
+    if (!this.initialized) {
+      return {
+        isOrganic: false,
+        activityCount: '0',
+        verified: false,
+        error: 'Blockchain not configured'
+      };
+    }
+    
     try {
       const batchIdHash = this.getBatchIdHash(batchId);
       const isOrganic = await this.contract.checkOrganicStatus(batchIdHash);
@@ -103,6 +146,10 @@ class BlockchainService {
   }
   
   async getTotalActivities() {
+    if (!this.initialized) {
+      return '0';
+    }
+    
     try {
       const total = await this.contract.totalActivitiesRecorded();
       return total.toString();

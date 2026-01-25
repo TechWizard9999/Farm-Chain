@@ -5,11 +5,11 @@ scalar Date
 type Batch {
   id: ID!
   farm: ID!
-  cropCategory: String!
-  cropName: String!
+  cropCategory: String
+  cropName: String
   variety: String
   seedSource: String
-  sowingDate: Date!
+  sowingDate: Date
   expectedHarvestDate: Date
   currentState: String!
   stateLabel: String

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import FarmerLayout from "@/components/farmer/FarmerLayout";
 import { graphqlRequest } from "@/lib/apollo-client";
 import { MY_PRODUCTS_QUERY } from "@/lib/graphql/product";
-import { MY_AUCTIONS_QUERY, CREATE_AUCTION_MUTATION } from "@/lib/graphql/auction";
+import { MY_AUCTIONS_QUERY, CREATE_AUCTION_MUTATION, CLOSE_AUCTION_MUTATION } from "@/lib/graphql/auction";
 import { PRODUCT_REQUESTS_QUERY, OFFER_ON_REQUEST_MUTATION, MY_OFFERS_QUERY } from "@/lib/graphql/productRequest";
 import { startTransition } from "react";
 import { 
@@ -22,7 +22,9 @@ import {
     History,
     Check,
     XCircle,
-    Package
+    Package,
+    StopCircle,
+    AlertTriangle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,6 +39,7 @@ export default function BusinessPage() {
     const [showCreateAuction, setShowCreateAuction] = useState(false);
     const [showOfferModal, setShowOfferModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [endingAuction, setEndingAuction] = useState(null);
     
     // Create Auction State
     const [searchQuery, setSearchQuery] = useState("");
@@ -153,6 +156,38 @@ export default function BusinessPage() {
         }
     };
 
+    const handleEndAuction = async (auctionId) => {
+        if (!confirm("Are you sure you want to end this auction? The highest bidder (if any) will win.")) {
+            return;
+        }
+        setEndingAuction(auctionId);
+        try {
+            await graphqlRequest(CLOSE_AUCTION_MUTATION, { auctionId });
+            fetchData(); // Refresh
+        } catch (error) {
+            console.error("Error ending auction:", error);
+            alert("Failed to end auction: " + error.message);
+        } finally {
+            setEndingAuction(null);
+        }
+    };
+
+    // Format deadline safely
+    const formatDeadline = (deadline) => {
+        if (!deadline) return "No deadline";
+        const date = new Date(deadline);
+        if (isNaN(date.getTime())) return "Invalid Date";
+        return date.toLocaleString(undefined, {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    };
+
+    // Check if auction has expired
+    const isAuctionExpired = (deadline) => {
+        if (!deadline) return false;
+        return new Date(deadline) < new Date();
+    };
+
     // Cancel the category logic, use search instead
     const filteredProducts = products.filter(p => 
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -266,13 +301,22 @@ export default function BusinessPage() {
                                             className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-emerald-100 group"
                                         >
                                             <div className="h-40 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 relative">
-                                                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-white/30 flex items-center gap-1">
-                                                    <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse"></span>
-                                                    LIVE
+                                                <div className={`absolute top-4 right-4 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold border border-white/30 flex items-center gap-1 ${isAuctionExpired(auction.deadline) ? 'bg-orange-500/80' : 'bg-white/20'}`}>
+                                                    {isAuctionExpired(auction.deadline) ? (
+                                                        <>
+                                                            <AlertTriangle className="w-3 h-3" />
+                                                            EXPIRED
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse"></span>
+                                                            LIVE
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className="text-white mt-8">
-                                                    <h3 className="font-bold text-2xl truncate">{auction.product.title}</h3>
-                                                    <p className="text-emerald-100">{auction.product.batch?.cropName || 'Product'}</p>
+                                                    <h3 className="font-bold text-2xl truncate">{auction.product?.title || 'Product'}</h3>
+                                                    <p className="text-emerald-100">{auction.product?.batch?.cropName || 'Product'}</p>
                                                 </div>
                                             </div>
 
@@ -289,11 +333,9 @@ export default function BusinessPage() {
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-slate-400 text-xs font-bold uppercase mb-1">Ends</p>
-                                                        <span className="text-orange-600 font-bold flex items-center justify-end gap-1">
+                                                        <span className={`font-bold flex items-center justify-end gap-1 ${isAuctionExpired(auction.deadline) ? 'text-red-600' : 'text-orange-600'}`}>
                                                             <Clock className="w-4 h-4" />
-                                                            {new Date(auction.deadline).toLocaleString(undefined, {
-                                                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                                            })}
+                                                            {formatDeadline(auction.deadline)}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -768,11 +810,32 @@ export default function BusinessPage() {
                                                 required
                                             />
                                         </div>
+
+                                        {/* Validation Message */}
+                                        {(!auctionForm.productId || !auctionForm.minPricePerKg || !auctionForm.quantity || !auctionDateTime) && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                                <div className="text-sm text-amber-700">
+                                                    <p className="font-bold mb-1">Complete all fields to launch:</p>
+                                                    <ul className="list-disc list-inside space-y-0.5 text-amber-600">
+                                                        {!auctionForm.productId && <li>Select a product</li>}
+                                                        {!auctionForm.minPricePerKg && <li>Set minimum bid price</li>}
+                                                        {!auctionForm.quantity && <li>Enter quantity</li>}
+                                                        {!auctionDateTime && <li>Set end date & time</li>}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <button 
                                         type="submit"
-                                        className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-4"
+                                        disabled={!auctionForm.productId || !auctionForm.minPricePerKg || !auctionForm.quantity || !auctionDateTime}
+                                        className={`w-full font-bold py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2 mt-4 ${
+                                            auctionForm.productId && auctionForm.minPricePerKg && auctionForm.quantity && auctionDateTime
+                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/20'
+                                                : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                                        }`}
                                     >
                                         <Gavel className="w-5 h-5" />
                                         Launch Auction

@@ -62,7 +62,17 @@ const auctionResolver = {
     },
 
     Auction: {
-        id: (parent) => parent._id.toString()
+        id: (parent) => parent._id.toString(),
+        deadline: (parent) => {
+            if (!parent.deadline) return null;
+            const date = new Date(parent.deadline);
+            return isNaN(date.getTime()) ? null : date.toISOString();
+        },
+        createdAt: (parent) => {
+            if (!parent.createdAt) return null;
+            const date = new Date(parent.createdAt);
+            return isNaN(date.getTime()) ? null : date.toISOString();
+        }
     },
 
     Bid: {

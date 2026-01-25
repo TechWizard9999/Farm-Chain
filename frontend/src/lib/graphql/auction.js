@@ -60,3 +60,13 @@ export const PLACE_BID_MUTATION = `
     }
   }
 `;
+
+export const CLOSE_AUCTION_MUTATION = `
+  mutation CloseAuction($auctionId: ID!) {
+    closeAuction(auctionId: $auctionId) {
+      id
+      status
+      highestBid
+    }
+  }
+`;
