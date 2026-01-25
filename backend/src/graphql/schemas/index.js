@@ -6,16 +6,21 @@ const productSchema = require("./productSchema");
 const orderSchema = require("./orderSchema");
 const auctionSchema = require("./auctionSchema");
 const reviewSchema = require("./reviewSchema");
+const profileSchema = require("./profileSchema");
+const geocodingSchema = require("./geocodingSchema");
 
 const typeDefs = [
-  userSchema,
-  farmSchema,
-  batchSchema,
-  businessSchema,
-  productSchema,
-  orderSchema,
-  auctionSchema,
-  reviewSchema,
+    userSchema,
+    farmSchema,
+    batchSchema,
+    businessSchema,
+    productSchema,
+    orderSchema,
+    auctionSchema,
+    reviewSchema,
+    profileSchema,
+    geocodingSchema
+
 ];
 
 module.exports = typeDefs;
