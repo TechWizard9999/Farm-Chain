@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import ConsumerLayout from "@/components/consumer/ConsumerLayout";
@@ -21,6 +21,10 @@ import {
   Shield,
   Loader2,
   Search,
+  Sprout,
+  Truck,
+  Store,
+  Package
 } from "lucide-react";
 
 export default function ConsumerScan() {
@@ -29,11 +33,12 @@ export default function ConsumerScan() {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const [qrInput, setQrInput] = useState("");
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const qrFromUrl = searchParams.get("qr");
     if (qrFromUrl) {
-      setQrInput(qrFromUrl);
+      setQrInput(qrFromUrl)
       handleScanWithCode(qrFromUrl);
     }
   }, [searchParams]);
@@ -281,8 +286,21 @@ export default function ConsumerScan() {
               )}
             </motion.div>
 
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-              <div className="p-8">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden relative z-10">
+               {/* Header Image Area */}
+               <div className="h-48 bg-slate-50 relative shrink-0 overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-blue-600/10" />
+                   <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                   <div className="absolute bottom-0 left-0 w-56 h-56 bg-blue-500/10 rounded-full blur-2xl translate-y-1/4 -translate-x-1/4" />
+                   
+                   <div className="absolute -bottom-12 left-10 z-10">
+                      <div className="w-28 h-28 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 flex items-center justify-center text-6xl border-4 border-white transform rotate-3">
+                         🌿 
+                      </div> 
+                   </div>
+               </div>
+
+              <div className="p-8 pt-16">
                 <div className="flex items-start justify-between mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-slate-800 mb-1">
@@ -302,23 +320,12 @@ export default function ConsumerScan() {
 
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
                   <div className="flex items-start gap-3">
-                    <div className="p-3 bg-green-50 rounded-xl">
-                      <Leaf className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-500">Farmer</p>
-                      <p className="font-semibold text-slate-800">
-                        {scanResult.farmer?.name || "Unknown"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
                     <div className="p-3 bg-blue-50 rounded-xl">
                       <MapPin className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-slate-500">Farm Location</p>
-                      <p className="font-semibold text-slate-800">
+                      <p className="text-sm text-slate-500 font-bold">Farm Location</p>
+                      <p className="font-medium text-slate-800">
                         {scanResult.farm?.latitude
                           ? `${scanResult.farm.latitude.toFixed(4)}, ${scanResult.farm.longitude.toFixed(4)}`
                           : "N/A"}
@@ -330,83 +337,118 @@ export default function ConsumerScan() {
                       <Calendar className="w-6 h-6 text-purple-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-slate-500">Harvest Date</p>
-                      <p className="font-semibold text-slate-800">
+                      <p className="text-sm text-slate-500 font-bold">Harvest Date</p>
+                      <p className="font-medium text-slate-800">
                         {formatDate(scanResult.batch?.harvestDate)}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-3 bg-amber-50 rounded-xl">
-                      <Award className="w-6 h-6 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-500">Quality Grade</p>
-                      <p className="font-semibold text-slate-800">
-                        {scanResult.batch?.qualityGrade || "N/A"}
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="bg-green-50 rounded-xl p-4 text-center">
-                    <p className="text-sm text-slate-600 mb-1">Freshness</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {scanResult.scores?.freshness || 0}%
-                    </p>
-                  </div>
-                  <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                    <p className="text-sm text-slate-600 mb-1">Organic Score</p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      {scanResult.scores?.organic || 0}%
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 rounded-xl p-4 text-center">
-                    <p className="text-sm text-slate-600 mb-1">Overall</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {scanResult.scores?.overall || 0}%
-                    </p>
-                  </div>
-                </div>
-
+                {/* DYNAMIC MAP STRUCTURE - HORIZONTAL */}
                 {scanResult.timeline && scanResult.timeline.length > 0 && (
-                  <div>
-                    <h4 className="font-bold text-slate-800 mb-6">
-                      Product Journey
-                    </h4>
-                    <div className="space-y-4">
-                      {scanResult.timeline.map((step, index) => (
-                        <div key={index} className="flex items-start gap-4">
-                          <div className="relative">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-500 text-2xl">
-                              {step.icon}
-                            </div>
-                            {index < scanResult.timeline.length - 1 && (
-                              <div className="absolute left-6 top-12 w-0.5 h-8 bg-slate-200" />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-8">
-                            <h5 className="font-bold text-slate-800">
-                              {step.title}
-                            </h5>
-                            <p className="text-sm text-slate-600">
-                              {step.description}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {formatDate(step.date)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                 <div className="mt-12 mb-12">
+                    <div className="flex items-center justify-between mb-8 px-2">
+                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Journey Milestone Map</h3>
+                       <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+                          <CheckCircle2 size={12} strokeWidth={3} /> Verified Chain
+                       </span>
                     </div>
-                  </div>
+                    
+                    <div className="relative py-4">
+                       <div 
+                         ref={scrollContainerRef}
+                         className="flex flex-row overflow-x-auto pb-12 pt-2 gap-0 relative z-10 px-2 snap-x snap-mandatory mx-2 hide-scrollbar"
+                       >
+                          {scanResult.timeline.map((step, idx) => {
+                             const isLast = idx === scanResult.timeline.length - 1;
+                             return (
+                               <motion.div 
+                                 key={idx}
+                                 className="flex flex-col items-center min-w-[280px] snap-center relative"
+                                 initial={{ opacity: 0, y: 20 }}
+                                 animate={{ opacity: 1, y: 0 }}
+                                 transition={{ delay: idx * 0.2 }}
+                               >
+                                  {/* Connector Line Logic: Connect center to next center */}
+                                  {idx < scanResult.timeline.length - 1 && (
+                                      <div className="absolute top-10 left-[50%] w-full h-1.5 bg-slate-100 -z-10">
+                                          <motion.div 
+                                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 origin-left"
+                                            initial={{ scaleX: 0 }}
+                                            animate={{ scaleX: 1 }}
+                                            transition={{ duration: 0.8, delay: idx * 0.3 + 0.5, ease: "circOut" }}
+                                          />
+                                      </div>
+                                  )}
+
+                                  {/* Icon Circle */}
+                                  <motion.div 
+                                     className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl relative shrink-0 z-10 mb-6 transition-all duration-500
+                                        ${isLast 
+                                            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-xl shadow-emerald-500/40 border-4 border-white scale-110" 
+                                            : "bg-white border-4 border-slate-50 shadow-lg shadow-slate-200/50"}`
+                                     }
+                                     initial={isLast ? { scale: 1 } : { scale: 1 }}
+                                     animate={isLast ? { scale: [1, 1.1, 1] } : {}}
+                                     transition={isLast ? { duration: 2, repeat: Infinity } : {}}
+                                  >
+                                     {step.icon || "📍"}
+                                     
+                                     {/* Checkmark Badge */}
+                                     <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-4 border-white flex items-center justify-center shadow-lg transition-colors
+                                         ${isLast ? "bg-white text-emerald-600" : "bg-emerald-500 text-white"}`}>
+                                        <CheckCircle2 size={14} strokeWidth={3} />
+                                     </div>
+                                  </motion.div>
+
+                                  {/* Card Content */}
+                                  <div className={`
+                                      p-5 rounded-3xl border transition-all w-[90%] text-center relative flex flex-col min-h-[180px] relative
+                                      ${isLast 
+                                          ? "bg-gradient-to-b from-emerald-50 to-white border-emerald-200 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/10" 
+                                          : "bg-white border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl hover:shadow-slate-200/50" }
+                                  `}>
+                                     {/* Arrow */}
+                                     <div className={`absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 border-t border-l transform rotate-45 z-20 
+                                         ${isLast ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-100"}`} 
+                                     />
+
+                                     <div className="mb-3">
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm
+                                            ${isLast ? "bg-emerald-600 text-white shadow-emerald-500/30" : "bg-slate-100 text-slate-500"}`}>
+                                            {formatDate(step.date).split(',')[0]}
+                                        </span>
+                                     </div>
+
+                                     <h4 className={`font-bold text-lg leading-tight mb-2 ${isLast ? "text-emerald-900" : "text-slate-900"}`}>
+                                         {step.title}
+                                     </h4>
+                                     
+                                     <p className={`text-sm leading-relaxed p-3 rounded-2xl border mb-3 flex-1
+                                         ${isLast ? "bg-white/60 border-emerald-100/50 text-emerald-800" : "bg-slate-50 border-slate-100/50 text-slate-500"}`}>
+                                        {step.description}
+                                     </p>
+                                     
+                                     {step.whoClass && (
+                                       <div className="mt-auto flex items-center justify-center gap-2 pt-3 border-t border-dashed w-full border-slate-200/50">
+                                         <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center text-[10px]">👤</div>
+                                         <span className="text-xs font-bold text-slate-600 capitalize">{step.whoClass}</span>
+                                       </div>
+                                     )}
+                                  </div>
+                               </motion.div>
+                             );
+                          })}
+                       </div>
+                    </div>
+                 </div>
                 )}
 
-                <div className="flex gap-3 mt-8">
-                  <button className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 mt-8">
+                  <button className="flex-1 px-6 py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-900/10 hover:bg-slate-800 hover:shadow-2xl transition-all flex items-center justify-center gap-2">
                     <Share2 className="w-5 h-5" />
-                    Share Journey
+                    Share Verification Certificate
                   </button>
                   <button
                     onClick={() => {
@@ -414,9 +456,9 @@ export default function ConsumerScan() {
                       setQrInput("");
                       setError(null);
                     }}
-                    className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
+                    className="px-6 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                   >
-                    Scan Another
+                    Scan Another Product
                   </button>
                 </div>
               </div>

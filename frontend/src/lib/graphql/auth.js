@@ -28,6 +28,25 @@ export const SIGNUP_QUERY = `
   }
 `;
 
+export const SEND_OTP_MUTATION = `
+  mutation SendOTP($identifier: String!) {
+    sendOTP(identifier: $identifier) {
+      success
+      message
+      otp
+    }
+  }
+`;
+
+export const RESET_PASSWORD_MUTATION = `
+  mutation ResetPassword($identifier: String!, $otp: String!, $newPassword: String!) {
+    resetPassword(identifier: $identifier, otp: $otp, newPassword: $newPassword) {
+      success
+      message
+    }
+  }
+`;
+
 export const ME_QUERY = `
   query Me {
     me {
