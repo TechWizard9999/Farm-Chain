@@ -38,6 +38,15 @@ export const SEND_OTP_MUTATION = `
   }
 `;
 
+export const VERIFY_OTP_MUTATION = `
+  mutation VerifyOTP($identifier: String!, $otp: String!) {
+    verifyOTP(identifier: $identifier, otp: $otp) {
+      success
+      message
+    }
+  }
+`;
+
 export const RESET_PASSWORD_MUTATION = `
   mutation ResetPassword($identifier: String!, $otp: String!, $newPassword: String!) {
     resetPassword(identifier: $identifier, otp: $otp, newPassword: $newPassword) {

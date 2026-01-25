@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import FarmerLayout from '@/components/farmer/FarmerLayout';
 import {
@@ -22,11 +23,14 @@ import {
     Bug,
     Scissors,
     PackageCheck,
-    Truck
+    Truck,
+    ShoppingCart,
+    DollarSign
 } from 'lucide-react';
 import { graphqlRequest } from '@/lib/apollo-client';
 import { MY_FARMS_QUERY } from '@/lib/graphql/farm';
 import { CREATE_BATCH_MUTATION, LIST_BATCHES_QUERY, DELETE_BATCH_MUTATION, LOG_ACTIVITY_MUTATION } from '@/lib/graphql/batch';
+import { CREATE_PRODUCT_MUTATION } from '@/lib/graphql/product';
 
 const CROP_CATEGORIES = ['Vegetables', 'Fruits', 'Grains', 'Pulses', 'Spices', 'Other'];
 
@@ -42,12 +46,14 @@ const ACTIVITY_TYPES = [
 ];
 
 export default function BatchTracking() {
+    const router = useRouter();
     const [batches, setBatches] = useState([]);
     const [farms, setFarms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showActivityModal, setShowActivityModal] = useState(false);
+    const [showProductModal, setShowProductModal] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -66,7 +72,18 @@ export default function BatchTracking() {
         activityType: '',
         productName: '',
         quantity: '',
+        driverName: '',
+        vehicleNumber: '',
         notes: ''
+    });
+
+    const [productFormData, setProductFormData] = useState({
+        title: '',
+        description: '',
+        pricePerKg: '',
+        availableQty: '',
+        minOrderQty: '1',
+        isOrganic: false
     });
 
     useEffect(() => {
@@ -160,12 +177,19 @@ export default function BatchTracking() {
         setError('');
 
         try {
+            // Build notes with driver/vehicle info for SHIPPED
+            let notesContent = activityFormData.notes || '';
+            if (activityFormData.activityType === 'SHIPPED') {
+                const shippingInfo = `Driver: ${activityFormData.driverName} | Vehicle: ${activityFormData.vehicleNumber}`;
+                notesContent = notesContent ? `${shippingInfo}\n${notesContent}` : shippingInfo;
+            }
+
             const input = {
                 activityType: activityFormData.activityType,
                 date: new Date().toISOString(),
                 productName: activityFormData.productName || null,
                 quantity: activityFormData.quantity ? parseFloat(activityFormData.quantity) : null,
-                notes: activityFormData.notes || null
+                notes: notesContent || null
             };
 
             const data = await graphqlRequest(LOG_ACTIVITY_MUTATION, { 
@@ -173,7 +197,6 @@ export default function BatchTracking() {
                 input 
             });
 
-            // Update the batch in state with new data
             setBatches(prev => prev.map(b => 
                 b.id === selectedBatch.id 
                     ? { ...b, ...data.logActivity, farmInfo: b.farmInfo }
@@ -207,17 +230,69 @@ export default function BatchTracking() {
         setShowActivityModal(true);
     };
 
+    const openProductModal = (batch) => {
+        setSelectedBatch(batch);
+        // Pre-fill product data from batch
+        setProductFormData({
+            title: batch.cropName + (batch.variety ? ` - ${batch.variety}` : ''),
+            description: `Fresh ${batch.cropName} from ${batch.seedSource || 'local farm'}. Sowed on ${new Date(batch.sowingDate).toLocaleDateString()}.`,
+            pricePerKg: '',
+            availableQty: '',
+            minOrderQty: '1',
+            isOrganic: batch.farmInfo?.organicStatus === 'certified'
+        });
+        setError('');
+        setShowProductModal(true);
+    };
+
+    const handleCreateProduct = async (e) => {
+        e.preventDefault();
+        if (!selectedBatch) return;
+
+        setSubmitting(true);
+        setError('');
+
+        try {
+            await graphqlRequest(CREATE_PRODUCT_MUTATION, {
+                batchId: selectedBatch.id,
+                title: productFormData.title,
+                description: productFormData.description || null,
+                category: selectedBatch.cropCategory,
+                pricePerKg: parseFloat(productFormData.pricePerKg),
+                availableQty: parseFloat(productFormData.availableQty),
+                minOrderQty: parseFloat(productFormData.minOrderQty) || 1,
+                isOrganic: productFormData.isOrganic
+            });
+
+            setShowProductModal(false);
+            setSelectedBatch(null);
+            // Navigate to products page
+            router.push('/farmer/products');
+        } catch (err) {
+            setError(err.message || 'Failed to create product');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const getActivityInfo = (activityType) => {
         return ACTIVITY_TYPES.find(a => a.value === activityType) || ACTIVITY_TYPES[0];
     };
 
     const getCurrentStateInfo = (batch) => {
-        // Get the last activity type or show 'Not Started'
         if (batch.activities && batch.activities.length > 0) {
             const lastActivity = batch.activities[batch.activities.length - 1];
             return getActivityInfo(lastActivity.activityType);
         }
         return { value: 'NONE', label: 'Not Started', icon: Clock, color: 'bg-gray-100 text-gray-700' };
+    };
+
+    const isHarvested = (batch) => {
+        // Check if batch has HARVEST activity
+        if (batch.activities && batch.activities.length > 0) {
+            return batch.activities.some(a => a.activityType === 'HARVEST');
+        }
+        return false;
     };
 
     const filteredBatches = batches.filter(batch =>
@@ -292,6 +367,7 @@ export default function BatchTracking() {
                         {filteredBatches.map((batch, index) => {
                             const stateInfo = getCurrentStateInfo(batch);
                             const StateIcon = stateInfo.icon;
+                            const harvested = isHarvested(batch);
 
                             return (
                                 <motion.div
@@ -369,13 +445,28 @@ export default function BatchTracking() {
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="border-t border-stone-100 pt-4">
+                                        <div className="border-t border-stone-100 pt-4 flex flex-wrap gap-3">
                                             <button 
                                                 onClick={() => openActivityModal(batch)}
                                                 className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
                                             >
                                                 <Activity className="w-4 h-4" />
                                                 Log Activity
+                                            </button>
+                                            
+                                            {/* Add to Product button - only enabled when harvested */}
+                                            <button 
+                                                onClick={() => openProductModal(batch)}
+                                                disabled={!harvested}
+                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center gap-2 ${
+                                                    harvested 
+                                                        ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                                                        : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                                                }`}
+                                                title={harvested ? 'Add to Products' : 'Log HARVEST activity first'}
+                                            >
+                                                <ShoppingCart className="w-4 h-4" />
+                                                Add to Product
                                             </button>
                                         </div>
                                     </div>
@@ -544,7 +635,6 @@ export default function BatchTracking() {
                                 {error && <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>}
 
                                 <form onSubmit={handleLogActivity} className="space-y-5">
-                                    {/* Activity Type Selection */}
                                     <div>
                                         <label className="block text-sm font-semibold text-stone-700 mb-3">Activity Type *</label>
                                         <div className="grid grid-cols-2 gap-2">
@@ -570,40 +660,119 @@ export default function BatchTracking() {
                                         </div>
                                     </div>
 
-                                    {/* Product Name (for fertilizer/pesticide) */}
                                     {(activityFormData.activityType === 'FERTILIZER' || activityFormData.activityType === 'PESTICIDE') && (
                                         <div>
-                                            <label className="block text-sm font-semibold text-stone-700 mb-2">Product Name</label>
+                                            <label className="block text-sm font-semibold text-stone-700 mb-2">
+                                                {activityFormData.activityType === 'FERTILIZER' ? 'Fertilizer Name *' : 'Pesticide Name *'}
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={activityFormData.productName}
                                                 onChange={(e) => setActivityFormData(prev => ({ ...prev, productName: e.target.value }))}
-                                                placeholder="e.g., Urea, Neem Oil"
+                                                required
+                                                placeholder={activityFormData.activityType === 'FERTILIZER' 
+                                                    ? "e.g., Urea, DAP, NPK, Compost" 
+                                                    : "e.g., Neem Oil, Imidacloprid, Bio-pesticide"}
                                                 className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
                                             />
                                         </div>
                                     )}
 
-                                    {/* Quantity */}
-                                    <div>
-                                        <label className="block text-sm font-semibold text-stone-700 mb-2">Quantity (kg/liters)</label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={activityFormData.quantity}
-                                            onChange={(e) => setActivityFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                                            placeholder="e.g., 50"
-                                            className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
-                                        />
-                                    </div>
+                                    {/* Quantity for Harvest and Packed */}
+                                    {(activityFormData.activityType === 'HARVEST' || activityFormData.activityType === 'PACKED') && (
+                                        <div>
+                                            <label className="block text-sm font-semibold text-stone-700 mb-2">
+                                                {activityFormData.activityType === 'HARVEST' ? 'Harvest Quantity (kg) *' : 'Packed Quantity (kg) *'}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="1"
+                                                min="1"
+                                                value={activityFormData.quantity}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                                    setActivityFormData(prev => ({ ...prev, quantity: value }));
+                                                }}
+                                                required
+                                                placeholder={activityFormData.activityType === 'HARVEST' ? "e.g., 500" : "e.g., 450"}
+                                                className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
+                                            />
+                                            {activityFormData.activityType === 'PACKED' && (() => {
+                                                const harvestActivity = selectedBatch.activities?.find(a => a.activityType === 'HARVEST');
+                                                const harvestQty = harvestActivity?.quantity || 0;
+                                                const packedQty = parseFloat(activityFormData.quantity) || 0;
+                                                if (harvestQty > 0 && packedQty > harvestQty) {
+                                                    return (
+                                                        <p className="text-xs text-red-500 mt-1">
+                                                            ⚠️ Packed quantity cannot exceed harvested quantity ({harvestQty} kg)
+                                                        </p>
+                                                    );
+                                                }
+                                                if (harvestQty > 0) {
+                                                    return (
+                                                        <p className="text-xs text-stone-500 mt-1">
+                                                            Available from harvest: {harvestQty} kg
+                                                        </p>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+                                        </div>
+                                    )}
 
-                                    {/* Notes */}
+                                    {/* Driver and Vehicle for Shipped */}
+                                    {activityFormData.activityType === 'SHIPPED' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-stone-700 mb-2">Driver Name *</label>
+                                                <input
+                                                    type="text"
+                                                    value={activityFormData.driverName}
+                                                    onChange={(e) => setActivityFormData(prev => ({ ...prev, driverName: e.target.value }))}
+                                                    required
+                                                    placeholder="e.g., Ramesh Kumar"
+                                                    className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-stone-700 mb-2">Vehicle Number *</label>
+                                                <input
+                                                    type="text"
+                                                    value={activityFormData.vehicleNumber}
+                                                    onChange={(e) => setActivityFormData(prev => ({ ...prev, vehicleNumber: e.target.value.toUpperCase() }))}
+                                                    required
+                                                    placeholder="e.g., TS 01 AB 1234"
+                                                    className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
                                     <div>
-                                        <label className="block text-sm font-semibold text-stone-700 mb-2">Notes</label>
+                                        <label className="block text-sm font-semibold text-stone-700 mb-2">
+                                            {activityFormData.activityType === 'FERTILIZER' ? 'About the Fertilizer' 
+                                                : activityFormData.activityType === 'PESTICIDE' ? 'About the Pesticide'
+                                                : activityFormData.activityType === 'SHIPPED' ? 'Delivery Notes'
+                                                : 'Notes'}
+                                        </label>
                                         <textarea
                                             value={activityFormData.notes}
                                             onChange={(e) => setActivityFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                            placeholder="Any additional notes..."
+                                            placeholder={
+                                                activityFormData.activityType === 'FERTILIZER' 
+                                                    ? "Describe the fertilizer used, quantity applied, method of application, and purpose..."
+                                                : activityFormData.activityType === 'PESTICIDE'
+                                                    ? "Describe the pesticide used, target pest/disease, dosage, and safety precautions..."
+                                                : activityFormData.activityType === 'WATERING'
+                                                    ? "Describe the irrigation method, water source, duration..."
+                                                : activityFormData.activityType === 'HARVEST'
+                                                    ? "Describe the quality grade, any observations..."
+                                                : activityFormData.activityType === 'PACKED'
+                                                    ? "Describe the packaging type, storage conditions..."
+                                                : activityFormData.activityType === 'SHIPPED'
+                                                    ? "Destination address, expected delivery date, special handling instructions..."
+                                                : "Add any relevant notes about this activity..."
+                                            }
                                             rows={3}
                                             className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none resize-none"
                                         />
@@ -615,10 +784,149 @@ export default function BatchTracking() {
                                         </button>
                                         <button 
                                             type="submit" 
-                                            disabled={submitting || !activityFormData.activityType} 
+                                            disabled={
+                                                submitting || 
+                                                !activityFormData.activityType || 
+                                                ((activityFormData.activityType === 'FERTILIZER' || activityFormData.activityType === 'PESTICIDE') && !activityFormData.productName) ||
+                                                ((activityFormData.activityType === 'HARVEST' || activityFormData.activityType === 'PACKED') && !activityFormData.quantity) ||
+                                                (activityFormData.activityType === 'SHIPPED' && (!activityFormData.driverName || !activityFormData.vehicleNumber)) ||
+                                                (activityFormData.activityType === 'PACKED' && (() => {
+                                                    const harvestActivity = selectedBatch?.activities?.find(a => a.activityType === 'HARVEST');
+                                                    const harvestQty = harvestActivity?.quantity || 0;
+                                                    const packedQty = parseFloat(activityFormData.quantity) || 0;
+                                                    return harvestQty > 0 && packedQty > harvestQty;
+                                                })())
+                                            } 
                                             className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                                         >
                                             {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : 'Log Activity'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Add to Product Modal */}
+                <AnimatePresence>
+                    {showProductModal && selectedBatch && (
+                        <motion.div
+                            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowProductModal(false)}
+                        >
+                            <motion.div
+                                className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-stone-800">Add to Products</h2>
+                                        <p className="text-sm text-stone-500 mt-1">{selectedBatch.cropName} - {selectedBatch.cropCategory}</p>
+                                    </div>
+                                    <button onClick={() => setShowProductModal(false)} className="p-2 hover:bg-stone-100 rounded-xl">
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                {error && <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>}
+
+                                <form onSubmit={handleCreateProduct} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-stone-700 mb-2">Product Title *</label>
+                                        <input
+                                            type="text"
+                                            value={productFormData.title}
+                                            onChange={(e) => setProductFormData(prev => ({ ...prev, title: e.target.value }))}
+                                            required
+                                            placeholder="e.g., Fresh Organic Tomatoes"
+                                            className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-purple-500 outline-none"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-stone-700 mb-2">Description</label>
+                                        <textarea
+                                            value={productFormData.description}
+                                            onChange={(e) => setProductFormData(prev => ({ ...prev, description: e.target.value }))}
+                                            placeholder="Describe your product..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-purple-500 outline-none resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-stone-700 mb-2">Price per kg (₹) *</label>
+                                            <div className="relative">
+                                                <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" />
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={productFormData.pricePerKg}
+                                                    onChange={(e) => setProductFormData(prev => ({ ...prev, pricePerKg: e.target.value }))}
+                                                    required
+                                                    placeholder="50"
+                                                    className="w-full pl-12 pr-4 py-3 border-2 border-stone-200 rounded-xl focus:border-purple-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-stone-700 mb-2">Available Qty (kg) *</label>
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={productFormData.availableQty}
+                                                onChange={(e) => setProductFormData(prev => ({ ...prev, availableQty: e.target.value }))}
+                                                required
+                                                placeholder="100"
+                                                className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-purple-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-stone-700 mb-2">Min Order Qty (kg)</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={productFormData.minOrderQty}
+                                            onChange={(e) => setProductFormData(prev => ({ ...prev, minOrderQty: e.target.value }))}
+                                            placeholder="1"
+                                            className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-purple-500 outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl">
+                                        <input
+                                            type="checkbox"
+                                            id="isOrganic"
+                                            checked={productFormData.isOrganic}
+                                            onChange={(e) => setProductFormData(prev => ({ ...prev, isOrganic: e.target.checked }))}
+                                            className="w-5 h-5 text-green-600 rounded"
+                                        />
+                                        <label htmlFor="isOrganic" className="font-semibold text-green-800 flex items-center gap-2">
+                                            <Leaf className="w-5 h-5" />
+                                            This is an organic product
+                                        </label>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4">
+                                        <button type="button" onClick={() => setShowProductModal(false)} className="flex-1 px-6 py-3 bg-stone-100 text-stone-600 rounded-xl font-semibold">
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            disabled={submitting} 
+                                            className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Creating...</> : 'Add Product'}
                                         </button>
                                     </div>
                                 </form>

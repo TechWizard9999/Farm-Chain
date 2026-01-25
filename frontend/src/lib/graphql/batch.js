@@ -30,6 +30,7 @@ export const LIST_BATCHES_QUERY = `
         id
         activityType
         date
+        quantity
         notes
       }
     }
@@ -88,6 +89,7 @@ export const LOG_ACTIVITY_MUTATION = `
         id
         activityType
         date
+        quantity
         notes
       }
     }

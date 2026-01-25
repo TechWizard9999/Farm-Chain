@@ -352,15 +352,23 @@ export default function FarmManagement() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-stone-700 mb-2">PIN Code *</label>
+                                    <label className="block text-sm font-medium text-stone-700 mb-2">PIN Code * <span className="text-xs text-stone-400">(6 digits)</span></label>
                                     <input
                                         type="text"
                                         value={farmFormData.pinCode}
-                                        onChange={(e) => setFarmFormData(prev => ({ ...prev, pinCode: e.target.value }))}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                            setFarmFormData(prev => ({ ...prev, pinCode: value }));
+                                        }}
                                         required
+                                        pattern="[0-9]{6}"
+                                        maxLength={6}
                                         placeholder="e.g., 500001"
                                         className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-green-500"
                                     />
+                                    {farmFormData.pinCode && farmFormData.pinCode.length !== 6 && (
+                                        <p className="text-xs text-red-500 mt-1">PIN code must be exactly 6 digits</p>
+                                    )}
                                 </div>
 
                                 <div>
