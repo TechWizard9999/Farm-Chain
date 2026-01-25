@@ -35,6 +35,9 @@ We leverage a hybrid architecture combining a user-friendly **Next.js Frontend**
 
 ![WhatsApp Image 2026-01-25 at 16 50 47](https://github.com/user-attachments/assets/2b0e7f29-4d12-4ede-9a01-b3d9d51740f3)
 
+<img width="7106" height="7160" alt="image" src="https://github.com/user-attachments/assets/8f4ad2b9-d9dc-4324-b73c-514a36a0164f" />
+
+
 
 ### Key Highlights
 
