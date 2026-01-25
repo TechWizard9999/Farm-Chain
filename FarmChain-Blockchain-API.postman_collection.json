@@ -1,0 +1,325 @@
+{
+    "info": {
+        "name": "FarmChain Blockchain API",
+        "description": "API collection for testing FarmChain blockchain integration",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3010/graphql"
+        },
+        {
+            "key": "token",
+            "value": ""
+        },
+        {
+            "key": "farmId",
+            "value": ""
+        },
+        {
+            "key": "batchId",
+            "value": ""
+        }
+    ],
+    "item": [
+        {
+            "name": "1. Login",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "mutation Login($identifier: String!, $password: String!) {\n  login(identifier: $identifier, password: $password) {\n    token\n    user {\n      id\n      name\n      email\n    }\n  }\n}",
+                        "variables": "{\n  \"identifier\": \"abhiram@gmail.com\",\n  \"password\": \"Sahaana@123\"\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var jsonData = pm.response.json();",
+                            "if (jsonData.data && jsonData.data.login) {",
+                            "    pm.collectionVariables.set('token', jsonData.data.login.token);",
+                            "    console.log('Token saved!');",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Get My Farms",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "query {\n  myFarms {\n    id\n    size\n    pinCode\n    soilType\n    organicStatus\n  }\n}",
+                        "variables": ""
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var jsonData = pm.response.json();",
+                            "if (jsonData.data && jsonData.data.myFarms && jsonData.data.myFarms.length > 0) {",
+                            "    pm.collectionVariables.set('farmId', jsonData.data.myFarms[0].id);",
+                            "    console.log('Farm ID saved: ' + jsonData.data.myFarms[0].id);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Create Batch",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "mutation CreateBatch($input: BatchInput!) {\n  createBatch(input: $input) {\n    id\n    cropName\n    cropCategory\n    currentState\n  }\n}",
+                        "variables": "{\n  \"input\": {\n    \"farm\": \"{{farmId}}\",\n    \"cropCategory\": \"Vegetables\",\n    \"cropName\": \"Organic Tomatoes\",\n    \"sowingDate\": \"2026-01-25\"\n  }\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var jsonData = pm.response.json();",
+                            "if (jsonData.data && jsonData.data.createBatch) {",
+                            "    pm.collectionVariables.set('batchId', jsonData.data.createBatch.id);",
+                            "    console.log('Batch ID saved: ' + jsonData.data.createBatch.id);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Log Activity (SEEDING) - Blockchain",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "mutation LogActivity($batchId: ID!, $input: ActivityInput!) {\n  logActivity(batchId: $batchId, input: $input) {\n    id\n    cropName\n    currentState\n    activities {\n      activityType\n      productName\n      quantity\n      isOrganic\n      blockchainStatus\n      blockchainTxHash\n      blockchainBlock\n    }\n  }\n}",
+                        "variables": "{\n  \"batchId\": \"{{batchId}}\",\n  \"input\": {\n    \"activityType\": \"SEEDING\",\n    \"productName\": \"Organic Tomato Seeds\",\n    \"quantity\": 500,\n    \"isOrganic\": true\n  }\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "5. Log Activity (WATERING) - Blockchain",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "mutation LogActivity($batchId: ID!, $input: ActivityInput!) {\n  logActivity(batchId: $batchId, input: $input) {\n    id\n    currentState\n    activities {\n      activityType\n      productName\n      isOrganic\n      blockchainStatus\n      blockchainTxHash\n    }\n  }\n}",
+                        "variables": "{\n  \"batchId\": \"{{batchId}}\",\n  \"input\": {\n    \"activityType\": \"WATERING\",\n    \"productName\": \"Well Water\",\n    \"quantity\": 10000,\n    \"isOrganic\": true\n  }\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "6. Log Activity (FERTILIZER) - Blockchain",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "mutation LogActivity($batchId: ID!, $input: ActivityInput!) {\n  logActivity(batchId: $batchId, input: $input) {\n    id\n    currentState\n    activities {\n      activityType\n      productName\n      isOrganic\n      blockchainStatus\n      blockchainTxHash\n    }\n  }\n}",
+                        "variables": "{\n  \"batchId\": \"{{batchId}}\",\n  \"input\": {\n    \"activityType\": \"FERTILIZER\",\n    \"productName\": \"Vermicompost\",\n    \"quantity\": 20000,\n    \"isOrganic\": true\n  }\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "7. Get Batch Details",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "query GetBatch($id: ID!) {\n  getBatch(id: $id) {\n    id\n    cropName\n    currentState\n    activities {\n      activityType\n      productName\n      quantity\n      isOrganic\n      date\n      blockchainStatus\n      blockchainTxHash\n      blockchainBlock\n    }\n  }\n}",
+                        "variables": "{\n  \"id\": \"{{batchId}}\"\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "8. Verify Organic (Blockchain)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "query VerifyOrganic($batchId: ID!) {\n  verifyOrganic(batchId: $batchId) {\n    isOrganic\n    activityCount\n    verified\n  }\n}",
+                        "variables": "{\n  \"batchId\": \"{{batchId}}\"\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "9. Get Journey State",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "graphql",
+                    "graphql": {
+                        "query": "query GetJourneyState($batchId: ID!) {\n  getJourneyState(batchId: $batchId) {\n    currentState\n    stateLabel\n    allowedActivities\n    isComplete\n  }\n}",
+                        "variables": "{\n  \"batchId\": \"{{batchId}}\"\n}"
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -1,4 +1,5 @@
 const BatchService = require("../../services/batchService");
+const blockchainService = require("../../services/blockchainService");
 const { 
     getAllowedActivities, 
     canDoActivity, 
@@ -26,6 +27,9 @@ const batchResolver = {
                 allowedActivities: getAllowedActivities(currentState),
                 isComplete: isJourneyComplete(currentState)
             };
+        },
+        verifyOrganic: async (_, { batchId }, context) => {
+            return blockchainService.checkOrganicStatus(batchId);
         }
     },
     
@@ -56,7 +60,23 @@ const batchResolver = {
             
             const nextState = getNextState(currentState, activityType);
             
-            return BatchService.logActivity(batchId, input, nextState);
+            const updatedBatch = await BatchService.logActivity(batchId, input, nextState);
+            
+            blockchainService.recordActivity(batchId, input)
+                .then(async (result) => {
+                    if (result.success) {
+                        const lastActivityIndex = updatedBatch.activities.length - 1;
+                        await BatchService.updateActivityBlockchain(
+                            batchId, 
+                            lastActivityIndex,
+                            result.txHash,
+                            result.blockNumber
+                        );
+                    }
+                })
+                .catch(err => console.error('Blockchain async error:', err));
+            
+            return updatedBatch;
         },
         recordHarvest: async (_, { batchId, input }, context) => {
             const batch = await BatchService.findById(batchId);

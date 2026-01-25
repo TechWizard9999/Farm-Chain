@@ -128,6 +128,21 @@ class BatchService {
     async delete(id) {
         return Batch.findByIdAndDelete(id);
     }
+
+    async updateActivityBlockchain(batchId, activityIndex, txHash, blockNumber) {
+        const updatePath = `activities.${activityIndex}`;
+        return Batch.findByIdAndUpdate(
+            batchId,
+            {
+                $set: {
+                    [`${updatePath}.blockchainTxHash`]: txHash,
+                    [`${updatePath}.blockchainBlock`]: blockNumber,
+                    [`${updatePath}.blockchainStatus`]: 'confirmed'
+                }
+            },
+            { new: true }
+        );
+    }
 }
 
 module.exports = new BatchService();

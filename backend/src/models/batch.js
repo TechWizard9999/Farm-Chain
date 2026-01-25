@@ -9,9 +9,17 @@ const activitySchema = new mongoose.Schema({
     date: { type: Date, required: true },
     productName: { type: String },
     quantity: { type: Number },
+    isOrganic: { type: Boolean, default: false },
     photo: { type: String },
     whoClass: { type: String },
-    notes: { type: String }
+    notes: { type: String },
+    blockchainTxHash: { type: String },
+    blockchainBlock: { type: Number },
+    blockchainStatus: { 
+        type: String, 
+        enum: ["pending", "confirmed", "failed"],
+        default: "pending"
+    }
 });
 
 const harvestSchema = new mongoose.Schema({

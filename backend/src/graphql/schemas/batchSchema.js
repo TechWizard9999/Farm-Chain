@@ -23,9 +23,19 @@ type Activity {
   date: Date!
   productName: String
   quantity: Float
+  isOrganic: Boolean
   photo: String
   whoClass: String
   notes: String
+  blockchainTxHash: String
+  blockchainBlock: Int
+  blockchainStatus: String
+}
+
+type OrganicVerification {
+  isOrganic: Boolean!
+  activityCount: String!
+  verified: Boolean!
 }
 
 type Harvest {
@@ -70,6 +80,7 @@ input ActivityInput {
   date: Date
   productName: String
   quantity: Float
+  isOrganic: Boolean
   photo: String
   whoClass: String
   notes: String
@@ -98,6 +109,7 @@ type Query {
   getBatch(id: ID!): Batch
   listBatches(farm: ID!): [Batch!]!
   getJourneyState(batchId: ID!): JourneyState
+  verifyOrganic(batchId: ID!): OrganicVerification
 }
 
 type Mutation {
