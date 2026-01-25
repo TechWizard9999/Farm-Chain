@@ -121,7 +121,7 @@ function AuthContainer() {
 
     try {
       if (mode === "login") {
-        const result = await login(formData.email, formData.password);
+        const result = await login(formData.email, formData.password, role);
         if (result.success) {
           router.push(
             result.user.role === "farmer"
@@ -262,10 +262,10 @@ function AuthContainer() {
                   {mode === "login"
                     ? "Access your dashboard."
                     : mode === "signup"
-                    ? "Create an account to join the network."
-                    : mode === "forgot_password"
-                    ? "Enter your email or phone to receive OTP."
-                    : "Enter the OTP sent to your device."}
+                      ? "Create an account to join the network."
+                      : mode === "forgot_password"
+                        ? "Enter your email or phone to receive OTP."
+                        : "Enter the OTP sent to your device."}
                 </p>
 
                 {error && (
@@ -275,22 +275,22 @@ function AuthContainer() {
                 )}
 
                 {(mode === "login" || mode === "signup") && (
-                <div className="bg-slate-100 p-1 rounded-2xl flex border border-slate-200 mb-8 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setRole("farmer")}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isFarmer ? "bg-white text-emerald-600 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"}`}
-                  >
-                    Farmer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole("consumer")}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isFarmer ? "bg-white text-emerald-600 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"}`}
-                  >
-                    Consumer
-                  </button>
-                </div>
+                  <div className="bg-slate-100 p-1 rounded-2xl flex border border-slate-200 mb-8 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setRole("farmer")}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isFarmer ? "bg-white text-emerald-600 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"}`}
+                    >
+                      Farmer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole("consumer")}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isFarmer ? "bg-white text-emerald-600 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"}`}
+                    >
+                      Consumer
+                    </button>
+                  </div>
                 )}
 
                 <form className="space-y-4" onSubmit={mode === "forgot_password" ? handleForgotPassword : mode === "verify_otp" ? handleResetPassword : handleSubmit}>
@@ -300,183 +300,183 @@ function AuthContainer() {
                         Email or Phone
                       </label>
                       <div className="relative group">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
-                          <input
-                            type="text"
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                            placeholder="Enter your registered email/phone"
-                            value={resetData.identifier}
-                            onChange={(e) => setResetData({...resetData, identifier: e.target.value})}
-                          />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
+                        <input
+                          type="text"
+                          required
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                          placeholder="Enter your registered email/phone"
+                          value={resetData.identifier}
+                          onChange={(e) => setResetData({ ...resetData, identifier: e.target.value })}
+                        />
                       </div>
                     </div>
                   )}
 
                   {mode === "verify_otp" && (
                     <div className="space-y-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            OTP Code
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none tracking-widest text-center font-bold"
-                            placeholder="• • • • • •"
-                            value={resetData.otp}
-                            onChange={(e) => setResetData({...resetData, otp: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            New Password
-                          </label>
-                          <input
-                            type="password"
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                            placeholder="New Password"
-                            value={resetData.newPassword}
-                            onChange={(e) => setResetData({...resetData, newPassword: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            Confirm Password
-                          </label>
-                          <input
-                            type="password"
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                            placeholder="Confirm Password"
-                            value={resetData.confirmPassword}
-                            onChange={(e) => setResetData({...resetData, confirmPassword: e.target.value})}
-                          />
-                        </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          OTP Code
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none tracking-widest text-center font-bold"
+                          placeholder="• • • • • •"
+                          value={resetData.otp}
+                          onChange={(e) => setResetData({ ...resetData, otp: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                          placeholder="New Password"
+                          value={resetData.newPassword}
+                          onChange={(e) => setResetData({ ...resetData, newPassword: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                          placeholder="Confirm Password"
+                          value={resetData.confirmPassword}
+                          onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
+                        />
+                      </div>
                     </div>
                   )}
                   {(mode === "login" || mode === "signup") && (
                     <>
-                  {mode === "signup" && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          required
-                          onChange={handleChange}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                          placeholder="John"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                          Contact
-                        </label>
-                        <input
-                          type="tel"
-                          name="phone"
-                          required
-                          onChange={handleChange}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                          placeholder="+1..."
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                      Email Address
-                    </label>
-                    <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        onChange={handleChange}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                        placeholder="you@domain.com"
-                      />
-                    </div>
-                  </div>
-
-                  {mode === "signup" &&
-                    (isFarmer ? (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            Farm Name
-                          </label>
-                          <input
-                            type="text"
-                            name="farmName"
-                            onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                            placeholder="Green Hill"
-                          />
+                      {mode === "signup" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                              Full Name
+                            </label>
+                            <input
+                              type="text"
+                              name="name"
+                              required
+                              onChange={handleChange}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                              placeholder="John"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                              Contact
+                            </label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              required
+                              onChange={handleChange}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                              placeholder="+1..."
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            Location
-                          </label>
+                      )}
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          Email Address
+                        </label>
+                        <div className="relative group">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
                           <input
-                            type="text"
-                            name="farmLocation"
+                            type="email"
+                            name="email"
+                            required
                             onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                            placeholder="Dallas, TX"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                            placeholder="you@domain.com"
                           />
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                          Delivery Address
-                        </label>
-                        <input
-                          type="text"
-                          name="address"
-                          onChange={handleChange}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                          placeholder="City, State, Zip"
-                        />
-                      </div>
-                    ))}
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                      Password
-                    </label>
-                    <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        required
-                        onChange={handleChange}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-11 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
+                      {mode === "signup" &&
+                        (isFarmer ? (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                                Farm Name
+                              </label>
+                              <input
+                                type="text"
+                                name="farmName"
+                                onChange={handleChange}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                                placeholder="Green Hill"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                                Location
+                              </label>
+                              <input
+                                type="text"
+                                name="farmLocation"
+                                onChange={handleChange}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                                placeholder="Dallas, TX"
+                              />
+                            </div>
+                          </div>
                         ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  </>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                              Delivery Address
+                            </label>
+                            <input
+                              type="text"
+                              name="address"
+                              onChange={handleChange}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                              placeholder="City, State, Zip"
+                            />
+                          </div>
+                        ))}
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                          Password
+                        </label>
+                        <div className="relative group">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            required
+                            onChange={handleChange}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-11 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                            placeholder="••••••••"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {mode === "login" && (
@@ -502,10 +502,10 @@ function AuthContainer() {
                         : mode === "login"
                           ? "Sign In"
                           : mode === "signup"
-                          ? "Join Network"
-                          : mode === "forgot_password"
-                          ? "Send OTP"
-                          : "Reset Password"}{" "}
+                            ? "Join Network"
+                            : mode === "forgot_password"
+                              ? "Send OTP"
+                              : "Reset Password"}{" "}
                       <ArrowRight className="w-4 h-4 text-emerald-200" />
                     </button>
                   </div>

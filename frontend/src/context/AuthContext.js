@@ -40,9 +40,9 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
-  const login = async (identifier, password) => {
+  const login = async (identifier, password, role) => {
     try {
-      const data = await graphqlRequest(LOGIN_QUERY, { identifier, password });
+      const data = await graphqlRequest(LOGIN_QUERY, { identifier, password, role });
       if (data?.login) {
         localStorage.setItem("farmchain_token", data.login.token);
         localStorage.setItem("farmchain_user", JSON.stringify(data.login.user));

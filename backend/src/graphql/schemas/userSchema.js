@@ -25,7 +25,7 @@ const typeDefs = `#graphql
 
   type Mutation {
     signup(name: String!, email: String, phone: String, password: String!, role: String): AuthResponse!
-    login(identifier: String!, password: String!): AuthResponse!
+    login(identifier: String!, password: String!, role: String): AuthResponse!
     googleAuth(googleToken: String!, role: String): AuthResponse!
     sendOTP(identifier: String!): OTPResponse!
     verifyOTP(identifier: String!, otp: String!): OTPResponse!

@@ -18,8 +18,8 @@ const userResolvers = {
             return authController.signup(name, email, phone, password, role);
         },
 
-        login: async (_, { identifier, password }) => {
-            return authController.login(identifier, password);
+        login: async (_, { identifier, password, role }) => {
+            return authController.login(identifier, password, role);
         },
 
         googleAuth: async (_, { googleToken, role }) => {

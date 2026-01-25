@@ -1,6 +1,6 @@
 export const LOGIN_QUERY = `
-  mutation Login($identifier: String!, $password: String!) {
-    login(identifier: $identifier, password: $password) {
+  mutation Login($identifier: String!, $password: String!, $role: String) {
+    login(identifier: $identifier, password: $password, role: $role) {
       token
       user {
         id
