@@ -1,4 +1,4 @@
-  'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,6 @@ import {
     PackageCheck,
     Truck,
     ShoppingCart,
-<<<<<<< Updated upstream
     DollarSign,
     Shield,
     Link2,
@@ -42,14 +41,6 @@ import { CREATE_BATCH_MUTATION, LIST_BATCHES_QUERY, DELETE_BATCH_MUTATION, LOG_A
 import { CREATE_PRODUCT_MUTATION } from '@/lib/graphql/product';
 import QRCode from 'react-qr-code';
 import { toPng } from 'html-to-image';
-=======
-    DollarSign
-} from 'lucide-react';
-import { graphqlRequest } from '@/lib/apollo-client';
-import { MY_FARMS_QUERY } from '@/lib/graphql/farm';
-import { CREATE_BATCH_MUTATION, LIST_BATCHES_QUERY, DELETE_BATCH_MUTATION, LOG_ACTIVITY_MUTATION } from '@/lib/graphql/batch';
-import { CREATE_PRODUCT_MUTATION } from '@/lib/graphql/product';
->>>>>>> Stashed changes
 
 const CROP_CATEGORIES = ['Vegetables', 'Fruits', 'Grains', 'Pulses', 'Spices', 'Other'];
 
@@ -67,10 +58,7 @@ const ACTIVITY_TYPES = [
 import { useAuth } from '@/context/AuthContext';
 
 export default function BatchTracking() {
-<<<<<<< Updated upstream
     const { user } = useAuth();
-=======
->>>>>>> Stashed changes
     const router = useRouter();
     const [batches, setBatches] = useState([]);
     const [farms, setFarms] = useState([]);
@@ -102,21 +90,8 @@ export default function BatchTracking() {
         quantity: '',
         driverName: '',
         vehicleNumber: '',
-<<<<<<< Updated upstream
         notes: '',
         isOrganic: false
-    });
-
-    const [productFormData, setProductFormData] = useState({
-        title: '',
-        description: '',
-        pricePerKg: '',
-        availableQty: '',
-        minOrderQty: '1',
-        isOrganic: false
-=======
-        notes: ''
->>>>>>> Stashed changes
     });
 
     const [productFormData, setProductFormData] = useState({
@@ -269,12 +244,8 @@ export default function BatchTracking() {
                 date: new Date().toISOString(),
                 productName: activityFormData.productName || null,
                 quantity: activityFormData.quantity ? parseFloat(activityFormData.quantity) : null,
-<<<<<<< Updated upstream
                 notes: notesContent || null,
                 isOrganic: activityFormData.isOrganic
-=======
-                notes: notesContent || null
->>>>>>> Stashed changes
             };
 
             const data = await graphqlRequest(LOG_ACTIVITY_MUTATION, { 
@@ -330,7 +301,6 @@ export default function BatchTracking() {
         setShowProductModal(true);
     };
 
-<<<<<<< Updated upstream
     const checkOrganicStatus = async (batchId) => {
         setVerifying(prev => ({ ...prev, [batchId]: true }));
         try {
@@ -367,8 +337,6 @@ export default function BatchTracking() {
         }
     };
 
-=======
->>>>>>> Stashed changes
     const handleCreateProduct = async (e) => {
         e.preventDefault();
         if (!selectedBatch) return;
@@ -522,12 +490,9 @@ export default function BatchTracking() {
                             const stateInfo = getCurrentStateInfo(batch);
                             const StateIcon = stateInfo.icon;
                             const harvested = isHarvested(batch);
-<<<<<<< Updated upstream
                             const confirmedCount = batch.activities?.filter(a => a.blockchainStatus === 'confirmed').length || 0;
                             const pendingCount = batch.activities?.filter(a => a.blockchainStatus === 'pending').length || 0;
                             const totalActivities = batch.activities?.length || 0;
-=======
->>>>>>> Stashed changes
 
                             return (
                                 <motion.div
@@ -771,7 +736,6 @@ export default function BatchTracking() {
                                                 }`}>
                                                     {verificationResults[batch.id].isOrganic ? (
                                                         <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl shadow-lg text-white">
-                                                            <Activity className="w-4 h-4" />
                                                             <Shield className="w-5 h-5" />
                                                         </div>
                                                     ) : (
@@ -801,11 +765,7 @@ export default function BatchTracking() {
 
                                         {/* Actions */}
                                         <div className="border-t border-stone-100 pt-4 flex flex-wrap gap-3">
-<<<<<<< Updated upstream
                                             <motion.button 
-=======
-                                            <button 
->>>>>>> Stashed changes
                                                 onClick={() => openActivityModal(batch)}
                                                 className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all text-sm flex items-center gap-2 shadow-md hover:shadow-lg"
                                                 whileHover={{ scale: 1.02 }}
@@ -813,7 +773,6 @@ export default function BatchTracking() {
                                             >
                                                 <Plus className="w-4 h-4" />
                                                 Log Activity
-<<<<<<< Updated upstream
                                             </motion.button>
                                             
                                             {/* Add to Product button - only enabled when harvested */}
@@ -842,24 +801,6 @@ export default function BatchTracking() {
                                                 <QrCode className="w-4 h-4" />
                                                 QR Code
                                             </motion.button>
-=======
-                                            </button>
-                                            
-                                            {/* Add to Product button - only enabled when harvested */}
-                                            <button 
-                                                onClick={() => openProductModal(batch)}
-                                                disabled={!harvested}
-                                                className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center gap-2 ${
-                                                    harvested 
-                                                        ? 'bg-purple-600 text-white hover:bg-purple-700' 
-                                                        : 'bg-stone-100 text-stone-400 cursor-not-allowed'
-                                                }`}
-                                                title={harvested ? 'Add to Products' : 'Log HARVEST activity first'}
-                                            >
-                                                <ShoppingCart className="w-4 h-4" />
-                                                Add to Product
-                                            </button>
->>>>>>> Stashed changes
                                         </div>
                                     </div>
                                 </motion.div>
@@ -1081,7 +1022,6 @@ export default function BatchTracking() {
                                     </div>
 
                                     {(activityFormData.activityType === 'FERTILIZER' || activityFormData.activityType === 'PESTICIDE') && (
-<<<<<<< Updated upstream
                                         <div className="space-y-5">
                                             <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
                                                 <input
@@ -1111,22 +1051,6 @@ export default function BatchTracking() {
                                                     className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
                                                 />
                                             </div>
-=======
-                                        <div>
-                                            <label className="block text-sm font-semibold text-stone-700 mb-2">
-                                                {activityFormData.activityType === 'FERTILIZER' ? 'Fertilizer Name *' : 'Pesticide Name *'}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={activityFormData.productName}
-                                                onChange={(e) => setActivityFormData(prev => ({ ...prev, productName: e.target.value }))}
-                                                required
-                                                placeholder={activityFormData.activityType === 'FERTILIZER' 
-                                                    ? "e.g., Urea, DAP, NPK, Compost" 
-                                                    : "e.g., Neem Oil, Imidacloprid, Bio-pesticide"}
-                                                className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:border-green-500 outline-none"
-                                            />
->>>>>>> Stashed changes
                                         </div>
                                     )}
 
@@ -1386,7 +1310,6 @@ export default function BatchTracking() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-<<<<<<< Updated upstream
 
                 {/* QR Code Modal */}
                 <AnimatePresence>
@@ -1431,7 +1354,6 @@ export default function BatchTracking() {
                                         onClick={() => {
                                             const url = `${window.location.origin}/verify/${selectedBatch.id}`;
                                             navigator.clipboard.writeText(url);
-                                            // You could add a toast here if you had one, for now it just copies
                                         }}
                                         className="text-stone-400 hover:text-stone-600 p-1"
                                         title="Copy Link"
@@ -1455,8 +1377,6 @@ export default function BatchTracking() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-=======
->>>>>>> Stashed changes
             </div>
         </FarmerLayout>
     );

@@ -5,15 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
   Lock,
-  User,
-  Phone,
-  MapPin,
-  Building,
-  ArrowRight,
   Eye,
   EyeOff,
-  ShoppingBag,
-  Leaf,
+  ArrowRight,
   ChevronLeft,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -197,23 +191,18 @@ function AuthContainer() {
   const isFarmer = role === "farmer";
 
   return (
-    // BACKGROUND: Very Light Gray/Slate - "Even Less Dark"
     <div className="h-screen w-full flex items-center justify-center bg-[#f1f5f9] p-4 lg:p-8 font-sans relative overflow-hidden">
-      {/* VIGNETTE EFFECT: Darkness coming from corners (Now subtle & light) */}
+      {/* VIGNETTE EFFECT */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        {/* Soft Slate Blobs in Corners */}
         <div className="absolute top-0 left-0 w-[50%] h-[50%] bg-slate-300/40 blur-[150px] rounded-br-full" />
         <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-slate-300/40 blur-[150px] rounded-bl-full" />
         <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-slate-300/40 blur-[150px] rounded-tr-full" />
         <div className="absolute bottom-0 right-0 w-[50%] h-[50%] bg-slate-300/40 blur-[150px] rounded-tl-full" />
-
-        {/* Global Radial Vignette for Light Theme */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(148,163,184,0.15)_100%)]" />
       </div>
 
       <motion.div
         layout
-        // CARD: Pure White for maximum clarity
         className="w-full max-w-[1100px] h-[85vh] min-h-[650px] bg-white rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col lg:flex-row relative z-10 border border-slate-200/50"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -242,7 +231,6 @@ function AuthContainer() {
                 unoptimized
                 priority
               />
-              {/* Light Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
               <div className="absolute top-10 left-10">
@@ -269,7 +257,7 @@ function AuthContainer() {
           </AnimatePresence>
         </div>
 
-        {/* FORM SECTION - Light Theme Form */}
+        {/* FORM SECTION */}
         <div className="w-full lg:w-[55%] flex flex-col bg-white">
           <div className="flex flex-col h-full p-10 lg:p-14 justify-center overflow-y-auto no-scrollbar">
             <div className="mb-4 shrink-0 flex justify-between items-center">
@@ -304,19 +292,12 @@ function AuthContainer() {
                   {mode === "login"
                     ? "Access your dashboard."
                     : mode === "signup"
-<<<<<<< Updated upstream
                       ? "Create an account to join the network."
                       : mode === "forgot_password"
                         ? "Enter your email or phone to receive OTP."
-                        : "Enter the OTP sent to your device."}
-=======
-                    ? "Create an account to join the network."
-                    : mode === "forgot_password"
-                    ? "Enter your email to receive a verification code."
-                    : mode === "verify_otp"
-                    ? "Enter the 6-digit code sent to your email."
-                    : "Create a strong password for your account."}
->>>>>>> Stashed changes
+                        : mode === "verify_otp"
+                          ? "Enter the OTP sent to your device."
+                          : "Create a strong password for your account."}
                 </p>
 
                 {error && (
@@ -363,7 +344,6 @@ function AuthContainer() {
                         Email Address
                       </label>
                       <div className="relative group">
-<<<<<<< Updated upstream
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
                         <input
                           type="text"
@@ -373,25 +353,13 @@ function AuthContainer() {
                           value={resetData.identifier}
                           onChange={(e) => setResetData({ ...resetData, identifier: e.target.value })}
                         />
-=======
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
-                          <input
-                            type="email"
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                            placeholder="Enter your registered email"
-                            value={resetData.identifier}
-                            onChange={(e) => setResetData({...resetData, identifier: e.target.value})}
-                          />
->>>>>>> Stashed changes
                       </div>
                     </div>
                   )}
 
-                  {/* Step 2: Enter OTP Only */}
+                  {/* Step 2: Enter OTP and New Password */}
                   {mode === "verify_otp" && (
                     <div className="space-y-4">
-<<<<<<< Updated upstream
                       <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
                           OTP Code
@@ -431,68 +399,6 @@ function AuthContainer() {
                           onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}
                         />
                       </div>
-=======
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            Enter 6-Digit OTP
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            maxLength={6}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-4 text-2xl focus:bg-white focus:border-emerald-500 transition-all outline-none tracking-[0.5em] text-center font-bold"
-                            placeholder="• • • • • •"
-                            value={resetData.otp}
-                            onChange={(e) => setResetData({...resetData, otp: e.target.value.replace(/\D/g, '').slice(0, 6)})}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-400 text-center">
-                          Didn't receive the code? <button type="button" onClick={handleForgotPassword} className="text-emerald-600 font-semibold hover:underline">Resend OTP</button>
-                        </p>
-                    </div>
-                  )}
-
-                  {/* Step 3: Set New Password */}
-                  {mode === "set_password" && (
-                    <div className="space-y-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            New Password
-                          </label>
-                          <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
-                            <input
-                              type="password"
-                              required
-                              minLength={6}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                              placeholder="Minimum 6 characters"
-                              value={resetData.newPassword}
-                              onChange={(e) => setResetData({...resetData, newPassword: e.target.value})}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                            Confirm Password
-                          </label>
-                          <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-emerald-500" />
-                            <input
-                              type="password"
-                              required
-                              minLength={6}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm focus:bg-white focus:border-emerald-500 transition-all outline-none"
-                              placeholder="Re-enter your password"
-                              value={resetData.confirmPassword}
-                              onChange={(e) => setResetData({...resetData, confirmPassword: e.target.value})}
-                            />
-                          </div>
-                          {resetData.newPassword && resetData.confirmPassword && resetData.newPassword !== resetData.confirmPassword && (
-                            <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
-                          )}
-                        </div>
->>>>>>> Stashed changes
                     </div>
                   )}
 
@@ -642,19 +548,10 @@ function AuthContainer() {
                         : mode === "login"
                           ? "Sign In"
                           : mode === "signup"
-<<<<<<< Updated upstream
                             ? "Join Network"
                             : mode === "forgot_password"
                               ? "Send OTP"
                               : "Reset Password"}{" "}
-=======
-                          ? "Join Network"
-                          : mode === "forgot_password"
-                          ? "Send OTP"
-                          : mode === "verify_otp"
-                          ? "Verify OTP"
-                          : "Reset Password"}{" "}
->>>>>>> Stashed changes
                       <ArrowRight className="w-4 h-4 text-emerald-200" />
                     </button>
                   </div>
